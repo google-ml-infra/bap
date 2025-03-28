@@ -1,0 +1,90 @@
+# Workflow to continuously regenerate the data for the ci dashboard
+name: Generate dashboard data
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    paths:
+      - ci_dashboard/data_query/**
+      - .github/workflows/generate-dashboard-data.yaml
+    branches:
+      - main
+jobs:
+  generate-json:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34 # v5.3.0
+        with:
+          go-version: 1.24.0
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+      # Get values for cache paths to be used in later steps
+      - id: cache-paths
+        run: |
+          echo "go-cache=$(go env GOCACHE)" >> $GITHUB_OUTPUT
+          echo "go-mod-cache=$(go env GOMODCACHE)" >> $GITHUB_OUTPUT
+      - name: Cache go modules
+        uses: actions/cache@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
+        with:
+          path: |
+            ${{ steps.cache-paths.outputs.go-cache }}
+            ${{ steps.cache-paths.outputs.go-mod-cache }}
+          key: ubuntu-latest-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: ubuntu-latest-go-
+      - name: Run the data generation
+        env:
+          GITHUB_REPOSITORY_ORG: jax-ml
+          GITHUB_REPOSITORY_NAME: jax
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd ci_dashboard/data_query
+          go run main.go
+  generate-angular:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 20
+        cache: 'npm'
+        cache-dependency-path: ci_dashboard/frontend/package-lock.json
+    - name: Install dependencies
+      working-directory: ci_dashboard/frontend
+      run: npm ci
+    # - name: Run Tests
+    #   run: npm test
+    - name: Build app
+      working-directory: ci_dashboard/frontend
+      run: npm run build
+    - name: Move files
+      working-directory: ci_dashboard/frontend
+      run: |
+        mv dist/ci-dashboard/3rdpartylicenses.txt dist/ci-dashboard/browser
+        ls -la dist/ci-dashboard
+    - name: Upload Pages
+      uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # ratchet:actions/upload-artifact@v4
+      with:
+        id: deployment
+        path: ci_dashboard/frontend/dist/ci-dashboard/browser
+  upload-site:
+    if: github.event_name == 'push'
+    needs: generate-angular
+    # Grant GITHUB_TOKEN the permissions required to make a Pages deployment
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    # Deploy to the github-pages environment
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    # Specify runner + deployment step
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # ratchet:actions/deploy-pages@v4
+
+
+
+
+
