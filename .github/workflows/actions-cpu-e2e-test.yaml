@@ -1,0 +1,29 @@
+name: CPU End-to-End Test
+
+on:
+  workflow_dispatch: # Allows manual triggering or via Github API
+    inputs:
+      triggering_job_id:
+        description: 'ID of the Kokoro job that triggered this workflow'
+        required: false
+  pull_request:
+    branches:
+      - main
+  schedule:
+    - cron: '0 9 * * *' # (UTC 9am everyday, and it corresponds to 2 am PDT everyday.)
+
+jobs:
+  test-runner:
+    strategy:
+      matrix:
+        runner: ["linux-x86-n2-16", "windows-x86-n2-16"]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # ratchet:actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Simulate running a job on ${{ matrix.runner }}
+        run: |
+          echo "Starting a job on runner: ${{ matrix.runner }}..."
+          sleep 30
+          echo "Job finished on runner: ${{ matrix.runner }}."
