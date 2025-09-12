@@ -6,9 +6,6 @@ on:
       triggering_job_id:
         description: 'ID of the Kokoro job that triggered this workflow'
         required: false
-  pull_request:
-    branches:
-      - main
   schedule:
     - cron: '0 9 * * *' # (UTC 9am everyday, and it corresponds to 2 am PDT everyday.)
 
