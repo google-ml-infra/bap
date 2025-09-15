@@ -9,6 +9,8 @@ on:
   schedule:
     - cron: '0 9 * * *' # (UTC 9am everyday, and it corresponds to 2 am PDT everyday.)
 
+permissions: {}
+
 jobs:
   test-runner:
     strategy:
