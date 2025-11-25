@@ -21,4 +21,4 @@ jobs:
     steps:
       - name: Print out devices
         run: |
-          python -c "import jax; print(jax.devices());"
+          python -c "import jax; assert len(jax.devices()) == 4"
