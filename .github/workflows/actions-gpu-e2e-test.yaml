@@ -1,9 +1,6 @@
 name: GPU End-to-End Test
 
 on:
-  pull_request:
-    branches:
-      - main
   workflow_dispatch: # Allows manual triggering or via Github API
     inputs:
       triggering_job_id:
