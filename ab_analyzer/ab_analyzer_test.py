@@ -20,10 +20,10 @@ from collections.abc import Mapping
 import sys
 import pytest
 from google.protobuf import wrappers_pb2
-from benchmarking.ab_analyzer import ab_analyzer_lib
-from benchmarking.proto import benchmark_job_pb2
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.proto.common import metric_pb2
+from ab_analyzer import ab_analyzer_lib
+from bap_proto import benchmark_job_pb2
+from bap_proto import benchmark_result_pb2
+from bap_proto.common import metric_pb2
 
 # --- Helper Functions ---
 

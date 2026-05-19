@@ -19,9 +19,9 @@ from pathlib import Path
 from typing import TypeAlias
 from collections.abc import Mapping
 from google.protobuf import json_format
-from benchmarking.proto import benchmark_job_pb2
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.proto.common import metric_pb2
+from bap_proto import benchmark_job_pb2
+from bap_proto import benchmark_result_pb2
+from bap_proto.common import metric_pb2
 
 # Maps A/B group to benchmark result.
 AbGroupResultMap: TypeAlias = Mapping[

@@ -27,7 +27,7 @@ from typing import Sequence
 from google.protobuf import json_format
 from protovalidate import validate, ValidationError
 from buf.validate.validate_pb2 import Violation
-from benchmarking.proto import benchmark_job_pb2
+from bap_proto import benchmark_job_pb2
 
 
 def _format_validation_error(violation: Violation) -> str:

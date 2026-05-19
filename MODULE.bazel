@@ -33,5 +33,6 @@ pip.parse(
     hub_name = "pypi",
     requirements_lock = "//:requirements.lock",
     python_version = "3.11",
+    extra_pip_args = ["--index-url", "https://pypi.org/simple"],
 )
 use_repo(pip, "pypi")

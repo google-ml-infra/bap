@@ -3,7 +3,7 @@
 import collections.abc
 import json
 from google.protobuf import json_format
-from benchmarking.proto.common import metric_pb2
+from bap_proto.common import metric_pb2
 
 
 def parse_metric_specs_from_json(

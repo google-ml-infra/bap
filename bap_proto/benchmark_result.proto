@@ -19,8 +19,8 @@ package bap;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/wrappers.proto";
 import "buf/validate/validate.proto";
-import "benchmarking/proto/common/metric.proto";
-import "benchmarking/proto/common/workflow_type.proto";
+import "bap_proto/common/metric.proto";
+import "bap_proto/common/workflow_type.proto";
 
 // A single computed statistic from a metric's raw data.
 message ComputedStat {

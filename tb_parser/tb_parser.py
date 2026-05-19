@@ -17,9 +17,9 @@
 import argparse
 import sys
 from google.protobuf import json_format, timestamp_pb2
-from benchmarking.utils import metric_parser
-from benchmarking.tb_parser import tb_parser_lib
-from benchmarking.proto import benchmark_result_pb2
+from utils import metric_parser
+from tb_parser import tb_parser_lib
+from bap_proto import benchmark_result_pb2
 from protovalidate import validate, ValidationError
 
 

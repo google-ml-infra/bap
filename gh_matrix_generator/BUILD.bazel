@@ -20,10 +20,10 @@ py_library(
     name = "gh_matrix_generator_lib",
     srcs = ["gh_matrix_generator_lib.py"],
     deps = [
-        "//benchmarking/proto:benchmark_registry_py_proto",
-        "//benchmarking/proto:benchmark_job_py_proto",
-        "//benchmarking/proto/common:workflow_type_py_proto",
-        "//benchmarking/proto/common:workload_action_py_proto",
+        "//bap_proto:benchmark_registry_py_proto",
+        "//bap_proto:benchmark_job_py_proto",
+        "//bap_proto/common:workflow_type_py_proto",
+        "//bap_proto/common:workload_action_py_proto",
         "@pypi//protovalidate",
     ],
 )

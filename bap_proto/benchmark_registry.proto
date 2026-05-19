@@ -17,10 +17,10 @@ syntax = "proto3";
 package bap;
 
 import "buf/validate/validate.proto";
-import "benchmarking/proto/common/metric.proto";
-import "benchmarking/proto/common/workflow_type.proto";
-import "benchmarking/proto/common/workload_action.proto";
-import "benchmarking/proto/common/environment_config.proto";
+import "bap_proto/common/metric.proto";
+import "bap_proto/common/workflow_type.proto";
+import "bap_proto/common/workload_action.proto";
+import "bap_proto/common/environment_config.proto";
 
 // Defines a specific benchmark configuration.
 message BenchmarkConfig {

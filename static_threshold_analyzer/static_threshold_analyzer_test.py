@@ -19,9 +19,9 @@ from typing import List
 from unittest import mock
 import pytest
 from google.protobuf import timestamp_pb2
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.proto.common import metric_pb2
-from benchmarking.static_threshold_analyzer.static_threshold_analyzer_lib import (
+from bap_proto import benchmark_result_pb2
+from bap_proto.common import metric_pb2
+from static_threshold_analyzer.static_threshold_analyzer_lib import (
   StaticAnalyzer,
 )
 

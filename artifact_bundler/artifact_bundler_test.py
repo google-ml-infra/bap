@@ -20,9 +20,9 @@ from pathlib import Path
 from unittest import mock
 import pytest
 from protovalidate import ValidationError
-from benchmarking.artifact_bundler import artifact_bundler_lib
-from benchmarking.proto import benchmark_job_pb2
-from benchmarking.proto.common import environment_config_pb2
+from artifact_bundler import artifact_bundler_lib
+from bap_proto import benchmark_job_pb2
+from bap_proto.common import environment_config_pb2
 
 
 # --- Helper Functions ---
@@ -58,7 +58,7 @@ def create_shard(
 # --- Tests for Matrix Parsing & Validation ---
 
 
-@mock.patch("benchmarking.artifact_bundler.artifact_bundler_lib.validate")
+@mock.patch("artifact_bundler.artifact_bundler_lib.validate")
 def test_parse_matrix_success(_mock_validate, tmp_path: Path):
   """Test parsing a valid matrix JSON file."""
   matrix_data = [
@@ -112,7 +112,7 @@ def test_parse_matrix_missing_file(tmp_path: Path):
     artifact_bundler_lib._parse_and_validate_matrix(p)
 
 
-@mock.patch("benchmarking.artifact_bundler.artifact_bundler_lib.validate")
+@mock.patch("artifact_bundler.artifact_bundler_lib.validate")
 def test_parse_matrix_validation_error(mock_validate, tmp_path: Path):
   """Test that protovalidate errors are caught and raised as ValueError."""
   # Mock validate to raise a ValidationError
@@ -180,7 +180,7 @@ def test_move_root_artifacts_missing_report(tmp_path: Path, capsys):
 
 
 @mock.patch(
-  "benchmarking.artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
+  "artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
 )
 def test_process_benchmarks_standard(mock_parse, tmp_path: Path):
   """Test processing a standard single-run benchmark."""
@@ -214,7 +214,7 @@ def test_process_benchmarks_standard(mock_parse, tmp_path: Path):
 
 
 @mock.patch(
-  "benchmarking.artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
+  "artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
 )
 def test_process_benchmarks_ab_mode(mock_parse, tmp_path: Path):
   """Test processing an A/B benchmark (experiment group)."""

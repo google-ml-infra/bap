@@ -20,9 +20,9 @@ py_library(
     name = "ab_analyzer_lib",
     srcs = ["ab_analyzer_lib.py"],
     deps = [
-        "//benchmarking/proto:benchmark_job_py_proto",
-        "//benchmarking/proto:benchmark_result_py_proto",
-        "//benchmarking/proto/common:metric_py_proto",
+        "//bap_proto:benchmark_job_py_proto",
+        "//bap_proto:benchmark_result_py_proto",
+        "//bap_proto/common:metric_py_proto",
     ],
 )
 

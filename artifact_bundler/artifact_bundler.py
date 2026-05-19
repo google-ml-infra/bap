@@ -40,7 +40,7 @@ Final output structure (in final_dir):
 
 import argparse
 from pathlib import Path
-from benchmarking.artifact_bundler import artifact_bundler_lib
+from artifact_bundler import artifact_bundler_lib
 
 
 def main():

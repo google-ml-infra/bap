@@ -20,8 +20,8 @@ py_library(
     name = "tb_parser_lib",
     srcs = ["tb_parser_lib.py"],
     deps = [
-        "//benchmarking/proto:benchmark_result_py_proto",
-        "//benchmarking/proto/common:metric_py_proto",
+        "//bap_proto:benchmark_result_py_proto",
+        "//bap_proto/common:metric_py_proto",
         "@pypi//numpy",
         "@pypi//tensorflow",
         "@pypi//setuptools"
@@ -34,7 +34,7 @@ py_binary(
     srcs = ["tb_parser.py"],
     deps = [
         ":tb_parser_lib",
-        "//benchmarking/utils:metric_parser",
+        "//utils:metric_parser",
         "@pypi//protovalidate",
     ],
 )

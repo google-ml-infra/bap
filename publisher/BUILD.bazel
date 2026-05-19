@@ -20,7 +20,7 @@ py_library(
     name = "publish_results_lib",
     srcs = ["publish_results_lib.py"],
     deps = [
-        "//benchmarking/proto:benchmark_result_py_proto",
+        "//bap_proto:benchmark_result_py_proto",
         "@pypi//google_cloud_pubsub",
         "@pypi//protobuf",
     ],

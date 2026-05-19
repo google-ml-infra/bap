@@ -18,8 +18,8 @@ import sys
 from unittest import mock
 import pytest
 from google.protobuf import text_format
-from benchmarking.gh_matrix_generator import gh_matrix_generator_lib
-from benchmarking.proto import benchmark_registry_pb2
+from gh_matrix_generator import gh_matrix_generator_lib
+from bap_proto import benchmark_registry_pb2
 
 # --- Test Data ---
 

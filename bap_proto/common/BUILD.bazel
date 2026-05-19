@@ -15,7 +15,7 @@
 load("@protobuf//bazel:proto_library.bzl", "proto_library")
 load("@protobuf//bazel:py_proto_library.bzl", "py_proto_library")
 
-package(default_visibility = ["//benchmarking:__subpackages__"])
+package(default_visibility = ["//visibility:public"])
 
 proto_library(
     name = "metric_proto",

@@ -23,8 +23,8 @@ from tensorboard.backend.event_processing.event_accumulator import (
   TensorEvent,
   ScalarEvent,
 )
-from benchmarking.proto.common import metric_pb2
-from benchmarking.tb_parser import tb_parser_lib
+from bap_proto.common import metric_pb2
+from tb_parser import tb_parser_lib
 
 # --- Helper Functions ---
 
@@ -63,7 +63,7 @@ def _create_fake_scalar_event(value: float) -> ScalarEvent:
 def mock_event_accumulator():
   """Mocks the EventAccumulator and its methods."""
   with mock.patch(
-    "benchmarking.tb_parser.tb_parser_lib.EventAccumulator"
+    "tb_parser.tb_parser_lib.EventAccumulator"
   ) as mock_accumulator_cls:
     mock_accumulator = mock_accumulator_cls.return_value
     mock_accumulator.Reload.return_value = None

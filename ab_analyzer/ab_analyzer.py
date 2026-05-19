@@ -19,8 +19,8 @@ import json
 import sys
 from pathlib import Path
 from google.protobuf import json_format
-from benchmarking.ab_analyzer import ab_analyzer_lib
-from benchmarking.proto import benchmark_job_pb2
+from ab_analyzer import ab_analyzer_lib
+from bap_proto import benchmark_job_pb2
 
 
 def main():

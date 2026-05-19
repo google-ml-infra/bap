@@ -18,7 +18,7 @@ import sys
 from collections.abc import Sequence
 from concurrent.futures import as_completed
 from google.cloud import pubsub_v1
-from benchmarking.proto import benchmark_result_pb2
+from bap_proto import benchmark_result_pb2
 from google.protobuf import json_format
 
 

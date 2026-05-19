@@ -20,8 +20,8 @@ import sys
 from google.protobuf import json_format
 from protovalidate import validate, ValidationError
 from buf.validate.validate_pb2 import Violation
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.publisher import publish_results_lib
+from bap_proto import benchmark_result_pb2
+from publisher import publish_results_lib
 
 
 def _format_validation_error(violation: Violation) -> str:

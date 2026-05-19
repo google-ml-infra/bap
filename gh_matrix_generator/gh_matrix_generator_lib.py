@@ -22,10 +22,10 @@ from typing import Any
 from google.protobuf import text_format
 from google.protobuf.json_format import MessageToDict
 from protovalidate import validate, ValidationError
-from benchmarking.proto import benchmark_registry_pb2
-from benchmarking.proto import benchmark_job_pb2
-from benchmarking.proto.common import workload_action_pb2
-from benchmarking.proto.common import workflow_type_pb2
+from bap_proto import benchmark_registry_pb2
+from bap_proto import benchmark_job_pb2
+from bap_proto.common import workload_action_pb2
+from bap_proto.common import workflow_type_pb2
 
 
 def _format_validation_error(violation) -> str:

@@ -19,8 +19,8 @@ Library for performing static threshold analysis on a benchmark result.
 import sys
 import re
 from typing import Dict, List, Union, TypedDict
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.proto.common import metric_pb2
+from bap_proto import benchmark_result_pb2
+from bap_proto.common import metric_pb2
 
 ResultMap = Dict[tuple[str, str], benchmark_result_pb2.ComputedStat]
 MetricSpecs = List[metric_pb2.MetricSpec]

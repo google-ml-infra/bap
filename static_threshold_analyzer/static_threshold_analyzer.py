@@ -20,9 +20,9 @@ import argparse
 import json
 import sys
 from google.protobuf import json_format
-from benchmarking.utils import metric_parser
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.static_threshold_analyzer.static_threshold_analyzer_lib import (
+from utils import metric_parser
+from bap_proto import benchmark_result_pb2
+from static_threshold_analyzer.static_threshold_analyzer_lib import (
   StaticAnalyzer,
 )
 

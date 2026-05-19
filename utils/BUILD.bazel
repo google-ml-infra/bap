@@ -17,8 +17,8 @@ load("@rules_python//python:defs.bzl", "py_library")
 py_library(
     name = "metric_parser",
     srcs = ["metric_parser.py"],
-    visibility = ["//benchmarking:__subpackages__"],
+    visibility = ["//visibility:public"],
     deps = [
-        "//benchmarking/proto/common:metric_py_proto",
+        "//bap_proto/common:metric_py_proto",
     ],
 )

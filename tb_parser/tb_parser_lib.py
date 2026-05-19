@@ -25,8 +25,8 @@ from collections.abc import Mapping, Sequence
 import numpy as np
 import tensorflow as tf
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.proto.common import metric_pb2
+from bap_proto import benchmark_result_pb2
+from bap_proto.common import metric_pb2
 
 MetricSpecs = Sequence[metric_pb2.MetricSpec]
 

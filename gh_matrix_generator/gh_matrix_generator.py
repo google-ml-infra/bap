@@ -17,7 +17,7 @@
 import argparse
 import json
 import shlex
-from benchmarking.gh_matrix_generator.gh_matrix_generator_lib import (
+from gh_matrix_generator.gh_matrix_generator_lib import (
   MatrixGenerator,
   load_and_validate_suite_from_pbtxt,
 )

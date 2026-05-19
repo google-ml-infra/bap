@@ -17,8 +17,8 @@
 import sys
 from unittest import mock
 import pytest
-from benchmarking.proto import benchmark_result_pb2
-from benchmarking.publisher import publish_results_lib
+from bap_proto import benchmark_result_pb2
+from publisher import publish_results_lib
 from google.protobuf import json_format
 
 
@@ -26,7 +26,7 @@ from google.protobuf import json_format
 def mock_publisher_client():
   """Mocks the pubsub_v1.PublisherClient."""
   with mock.patch(
-    "benchmarking.publisher.publish_results_lib.pubsub_v1.PublisherClient"
+    "publisher.publish_results_lib.pubsub_v1.PublisherClient"
   ) as mock_client_cls:
     mock_instance = mock_client_cls.return_value
     mock_instance.topic_path.side_effect = lambda project, topic: (
@@ -53,7 +53,7 @@ def test_publish_messages_success(mock_publisher_client, capsys):
   mock_publisher_client.publish.return_value = mock_future
 
   with mock.patch(
-    "benchmarking.publisher.publish_results_lib.as_completed",
+    "publisher.publish_results_lib.as_completed",
     side_effect=lambda futures: iter(futures),
   ):
     publish_results_lib.publish_messages(project_id, topic_id, messages, repo_name)
@@ -86,7 +86,7 @@ def test_publish_messages_all_fail(mock_publisher_client, capsys):
   mock_publisher_client.publish.return_value = mock_future
 
   with mock.patch(
-    "benchmarking.publisher.publish_results_lib.as_completed",
+    "publisher.publish_results_lib.as_completed",
     side_effect=lambda futures: iter(futures),
   ):
     with pytest.raises(RuntimeError) as e:
@@ -116,7 +116,7 @@ def test_publish_messages_one_fail(mock_publisher_client, capsys):
   mock_publisher_client.publish.side_effect = [f_success, f_success, f_fail]
 
   with mock.patch(
-    "benchmarking.publisher.publish_results_lib.as_completed",
+    "publisher.publish_results_lib.as_completed",
     side_effect=lambda futures: iter(futures),
   ):
     with pytest.raises(RuntimeError) as e:
@@ -147,7 +147,7 @@ def test_publish_messages_half_fail(mock_publisher_client, capsys):
   mock_publisher_client.publish.side_effect = [f_success, f_fail, f_success, f_fail]
 
   with mock.patch(
-    "benchmarking.publisher.publish_results_lib.as_completed",
+    "publisher.publish_results_lib.as_completed",
     side_effect=lambda futures: iter(futures),
   ):
     with pytest.raises(RuntimeError) as e:
