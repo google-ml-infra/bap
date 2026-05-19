@@ -179,9 +179,7 @@ def test_move_root_artifacts_missing_report(tmp_path: Path, capsys):
 # --- Tests for Benchmark Processing ---
 
 
-@mock.patch(
-  "artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
-)
+@mock.patch("artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix")
 def test_process_benchmarks_standard(mock_parse, tmp_path: Path):
   """Test processing a standard single-run benchmark."""
   raw_dir = tmp_path / "raw"
@@ -213,9 +211,7 @@ def test_process_benchmarks_standard(mock_parse, tmp_path: Path):
   assert (target_dir / "workload_artifacts" / "log.txt").exists()
 
 
-@mock.patch(
-  "artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix"
-)
+@mock.patch("artifact_bundler.artifact_bundler_lib._parse_and_validate_matrix")
 def test_process_benchmarks_ab_mode(mock_parse, tmp_path: Path):
   """Test processing an A/B benchmark (experiment group)."""
   raw_dir = tmp_path / "raw"

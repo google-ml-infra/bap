@@ -62,9 +62,7 @@ def _create_fake_scalar_event(value: float) -> ScalarEvent:
 @pytest.fixture
 def mock_event_accumulator():
   """Mocks the EventAccumulator and its methods."""
-  with mock.patch(
-    "tb_parser.tb_parser_lib.EventAccumulator"
-  ) as mock_accumulator_cls:
+  with mock.patch("tb_parser.tb_parser_lib.EventAccumulator") as mock_accumulator_cls:
     mock_accumulator = mock_accumulator_cls.return_value
     mock_accumulator.Reload.return_value = None
     mock_accumulator.Tags.return_value = {"tensors": [], "scalars": []}
