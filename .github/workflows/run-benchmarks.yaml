@@ -234,7 +234,7 @@ jobs:
              ARGS+=(--tag_filter "$TAG_FILTER")
           fi
 
-          MATRIX_JSON="$(bazel run //benchmarking/gh_matrix_generator \
+          MATRIX_JSON="$(bazel run //gh_matrix_generator \
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
@@ -364,7 +364,7 @@ jobs:
           mkdir -p "$BENCHMARK_RESULTS_DIR"          
           BENCHMARK_RESULT_FILE="$BENCHMARK_RESULTS_DIR/benchmark_result.json"
 
-          bazel run //benchmarking/tb_parser \
+          bazel run //tb_parser \
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
@@ -410,7 +410,7 @@ jobs:
           echo "::group::Run static threshold analyzer"
           set -euo pipefail
 
-          bazel run //benchmarking/static_threshold_analyzer \
+          bazel run //static_threshold_analyzer \
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
@@ -437,7 +437,7 @@ jobs:
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
-            //benchmarking/publisher:publish_results -- \
+            //publisher:publish_results -- \
             --project_id="$PROJECT_ID" \
             --topic_id="$TOPIC_ID" \
             --benchmark_results_dir="$BENCHMARK_RESULTS_DIR" \
@@ -484,7 +484,7 @@ jobs:
           REPORT_FILE="$GITHUB_WORKSPACE/ab_report.md"
 
           # Catch non-zero exit code to allow the workflow to proceed to the PR comment step.
-          bazel run //benchmarking/ab_analyzer \
+          bazel run //ab_analyzer \
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
@@ -571,7 +571,7 @@ jobs:
           FINAL_DIR="$GITHUB_WORKSPACE/final_artifacts"
           mkdir -p "$FINAL_DIR"
           
-          bazel run //benchmarking/artifact_bundler \
+          bazel run //artifact_bundler \
             --noshow_progress \
             --noshow_loading_progress \
             --ui_event_filters=-info \
