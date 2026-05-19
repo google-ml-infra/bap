@@ -45,10 +45,10 @@ on:
         required: false
         type: string
         default: ""
-      ml_actions_ref:
+      bap_ref:
         description: >
-          The branch, tag, or SHA of google-ml-infra/actions to use. Defaults to 'main'.
-          Note: For runs triggered from within the google-ml-infra/actions repo
+          The branch, tag, or SHA of google-ml-infra/bap to use. Defaults to 'main'.
+          Note: For runs triggered from within the google-ml-infra/bap repo
           (e.g., a PR), the commit SHA (github.sha) is used automatically to test changes.
         required: false
         type: string
@@ -111,7 +111,7 @@ jobs:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     outputs:
       matrix: ${{ steps.generate.outputs.matrix }}
-      ml_actions_ref: ${{ steps.resolve_refs.outputs.ml_actions_ref }}
+      bap_ref: ${{ steps.resolve_refs.outputs.bap_ref }}
       job_id: ${{ steps.gen_job_id.outputs.job_id }}
     steps:
       - name: Check out user repo
@@ -153,14 +153,14 @@ jobs:
           PR_BASE: ${{ github.base_ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           # If we are in the actions repo itself, use the current SHA. Otherwise, use the input ref.
-          ML_ACTIONS_REF: ${{ github.repository == 'google-ml-infra/actions' && github.sha || inputs.ml_actions_ref }}
+          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref }}
           SHA: ${{ github.sha }}
         run: |
           echo "::group::Resolve git refs"
           set -euo pipefail
           
           # Resolve ML Actions ref
-          echo "ml_actions_ref=$ML_ACTIONS_REF" >> "$GITHUB_OUTPUT"
+          echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
           # Resolve experiment ref.
           # Default to current SHA if not provided.
@@ -191,8 +191,8 @@ jobs:
       - name: Check out ML actions repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
         with:
-          repository: "google-ml-infra/actions"
-          ref: ${{ steps.resolve_refs.outputs.ml_actions_ref }}
+          repository: "google-ml-infra/bap"
+          ref: ${{ steps.resolve_refs.outputs.bap_ref }}
           path: ml_actions
           persist-credentials: false
 
@@ -300,8 +300,8 @@ jobs:
       - name: Check out ML actions repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
         with:
-          repository: "google-ml-infra/actions"
-          ref: ${{ needs.generate_matrix.outputs.ml_actions_ref }}
+          repository: "google-ml-infra/bap"
+          ref: ${{ needs.generate_matrix.outputs.bap_ref }}
           path: ml_actions
           persist-credentials: false
 
@@ -456,8 +456,8 @@ jobs:
       - name: Check out ML actions repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
         with:
-          repository: "google-ml-infra/actions"
-          ref: ${{ needs.generate_matrix.outputs.ml_actions_ref }}
+          repository: "google-ml-infra/bap"
+          ref: ${{ needs.generate_matrix.outputs.bap_ref }}
           path: ml_actions
           persist-credentials: false
 
@@ -547,8 +547,8 @@ jobs:
       - name: Check out ML actions repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
         with:
-          repository: "google-ml-infra/actions"
-          ref: ${{ needs.generate_matrix.outputs.ml_actions_ref }}
+          repository: "google-ml-infra/bap"
+          ref: ${{ needs.generate_matrix.outputs.bap_ref }}
           path: ml_actions
           persist-credentials: false
 
