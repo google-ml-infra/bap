@@ -19,7 +19,7 @@ package bap;
 import "buf/validate/validate.proto";
 import "bap_proto/common/workload_action.proto";
 import "bap_proto/common/metric.proto";
-import "bap_proto/common/workflow_type.proto"; 
+import "bap_proto/common/workflow_type.proto";
 import "bap_proto/common/environment_config.proto";
 
 // Defines the group assignment for A/B testing scenarios.
