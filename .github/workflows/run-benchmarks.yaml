@@ -118,19 +118,19 @@ jobs:
           path: user_repo
           persist-credentials: false
 
-      - name: Resolve ML Actions ref
+      - name: Resolve BAP ref
         id: resolve_refs
         shell: bash
         env:
-          # If we are in the actions repo itself, use the current SHA. Otherwise, use the input ref.
-          BAP_REF: ${{ github.repository == 'google-ml-infra/actions' && github.sha || inputs.bap_ref }}
+          # If we are in the bap repo itself, use the current SHA. Otherwise, use the input ref.
+          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref }}
         run: |
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
-      - name: Check out ML actions repo
+      - name: Check out BAP repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd  # ratchet:actions/checkout@v5
         with:
-          repository: "google-ml-infra/actions"
+          repository: "google-ml-infra/bap"
           ref: ${{ steps.resolve_refs.outputs.bap_ref }}
           path: ml_actions
           persist-credentials: false
