@@ -20,10 +20,10 @@ benchmarks {
   workload {
     # Must start with ./ml_actions because of the checkout path
     # in our reusable workflow.
-    action: "./ml_actions/benchmarking/actions/workload_executors/python"
-    action_inputs { key: "script_path" value: "benchmarking/e2e_test/run_benchmark_summary_v1.py" }
+    action: "./ml_actions/actions/workload_executors/python"
+    action_inputs { key: "script_path" value: "e2e_test/run_benchmark_summary_v1.py" }
     action_inputs { key: "python_version" value: "3.11" }
-    action_inputs { key: "project_path" value: "benchmarking/" }
+    action_inputs { key: "project_path" value: "./" }
     action_inputs { key: "extras" value: "test"}
   }
   environment_configs {
@@ -56,10 +56,10 @@ benchmarks {
   workload {
     # Must start with ./ml_actions because of the checkout path
     # in our reusable workflow.
-    action: "./ml_actions/benchmarking/actions/workload_executors/python"
-    action_inputs { key: "script_path" value: "benchmarking/e2e_test/run_benchmark_summary_v2.py" }
+    action: "./ml_actions/actions/workload_executors/python"
+    action_inputs { key: "script_path" value: "e2e_test/run_benchmark_summary_v2.py" }
     action_inputs { key: "python_version" value: "3.11" }
-    action_inputs { key: "project_path" value: "benchmarking/" }
+    action_inputs { key: "project_path" value: "./" }
     action_inputs { key: "extras" value: "test"}
   }
   environment_configs {
@@ -92,10 +92,10 @@ benchmarks {
   workload {
     # Must start with ./ml_actions because of the checkout path
     # in our reusable workflow.
-    action: "./ml_actions/benchmarking/actions/workload_executors/python"
-    action_inputs { key: "script_path" value: "benchmarking/e2e_test/run_benchmark_tensorboardx.py" }
+    action: "./ml_actions/actions/workload_executors/python"
+    action_inputs { key: "script_path" value: "e2e_test/run_benchmark_tensorboardx.py" }
     action_inputs { key: "python_version" value: "3.11" }
-    action_inputs { key: "project_path" value: "benchmarking/" }
+    action_inputs { key: "project_path" value: "./" }
     action_inputs { key: "extras" value: "test"}
   }
   environment_configs {
@@ -128,8 +128,8 @@ benchmarks {
   workload {
     # Must start with ./ml_actions because of the checkout path
     # in our reusable workflow.
-    action: "./ml_actions/benchmarking/actions/workload_executors/bazel"
-    action_inputs { key: "target" value: "//benchmarking/e2e_test:test_benchmark_summary_v2" }
+    action: "./ml_actions/actions/workload_executors/bazel"
+    action_inputs { key: "target" value: "//e2e_test:test_benchmark_summary_v2" }
   }
   environment_configs {
     id: "cpu_standard"

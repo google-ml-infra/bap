@@ -3,12 +3,12 @@
 ## Quick Links
 
 -   [GitHub Repository](https://github.com/google-ml-infra/actions)
--   [Reusable Workflow](https://github.com/google-ml-infra/actions/blob/main/.github/workflows/run-benchmarks.yaml)
+-   [Reusable Workflow](https://github.com/google-ml-infra/bap/blob/main/.github/workflows/run-benchmarks.yaml)
 
 ### Schema Definitions
 
--   [benchmark_registry.proto](https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/benchmark_registry.proto)
--   [benchmark_result.proto](https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/benchmark_result.proto)
+-   [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_registry.proto)
+-   [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)
 
 ## Overview
 
@@ -42,7 +42,7 @@ name: Run presubmit benchmarks
 on:
   pull_request:
     paths:
-      - 'benchmarking/**'
+      - './**'
 
 permissions:
   contents: read
@@ -50,9 +50,9 @@ permissions:
 
 jobs:
   run_benchmarks:
-    uses: google-ml-infra/actions/.github/workflows/run_benchmarks.yml@<commit | branch | tag>
+    uses: google-ml-infra/bap/.github/workflows/run_benchmarks.yml@<commit | branch | tag>
     with:
-      registry_file: "benchmarking/my_registry.pbtxt"
+      registry_file: "./my_registry.pbtxt"
       ml_actions_ref: <commit | branch | tag>
       publish_metrics: true
 ```
@@ -71,7 +71,7 @@ The reusable workflow supports the following inputs:
 | `benchmark_filter` | No | `""` | Regex to filter by benchmark name (e.g. `resnet.*`). |
 | `environment_filter` | No | `""` | Regex to filter by environment configuration ID (e.g. `a100.*`). |
 | `tag_filter` | No | `""` | Space-separated list of tags. Benchmarks and/or environment configs must match at least one (e.g. `gpu`). |
-| `ml_actions_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/actions to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/actions/.github/workflows/run_benchmarks.yml@v1.5.0"). |
+| `ml_actions_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/actions to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/bap/.github/workflows/run_benchmarks.yml@v1.5.0"). |
 | `job_id` | No | Random | A unique identifier for the top-level job (e.g. `e2e-test`). Used to namespace artifacts. If empty, a random ID is generated. |
 | `ab_mode` | No | `false` | If `true`, runs A/B comparison (baseline vs experiment) and generates an A/B report. |
 | `experiment_ref` | No | Current SHA | Git ref for the experiment in A/B mode. Defaults to the current commit SHA. |
@@ -91,7 +91,7 @@ The reusable workflow exposes the following outputs which can be used by downstr
 
 ### Workflow Type Inference
 
-The [workflow type](https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/common/workflow_type.proto) for a benchmark run is automatically inferred based on the GitHub event that triggered the workflow. This value is attached to the generated benchmark results as metadata, allowing downstream consumers (e.g., dashboards, Pub/Sub pipelines) to correctly categorize the data.
+The [workflow type](https://github.com/google-ml-infra/bap/blob/main/./proto/common/workflow_type.proto) for a benchmark run is automatically inferred based on the GitHub event that triggered the workflow. This value is attached to the generated benchmark results as metadata, allowing downstream consumers (e.g., dashboards, Pub/Sub pipelines) to correctly categorize the data.
 
 | GitHub Event | BAP Workflow Type |
 | :--- | :--- |
@@ -102,7 +102,7 @@ The [workflow type](https://github.com/google-ml-infra/actions/blob/main/benchma
 
 ## Create benchmark registry
 
-Next, create a benchmark registry file (.pbtxt) based on the [benchmark_registry.proto](https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/benchmark_registry.proto) schema. This file defines what code to run and how to run it.
+Next, create a benchmark registry file (.pbtxt) based on the [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_registry.proto) schema. This file defines what code to run and how to run it.
 
 ### Defining workloads
 
@@ -120,8 +120,8 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 
 #### Python Executor
 
-- Local reference: `./ml_actions/benchmarking/actions/workload_executors/python`
-- Remote reference: `google-ml-infra/actions/benchmarking/actions/workload_executors/python@<ref>`
+- Local reference: `./ml_actions/./actions/workload_executors/python`
+- Remote reference: `google-ml-infra/bap/./actions/workload_executors/python@<ref>`
 
 | Input | Required | Description |
 | :--- | :--- | :--- |
@@ -135,8 +135,8 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 
 #### Bazel Executor
 
-- Local reference: `./ml_actions/benchmarking/actions/workload_executors/bazel`
-- Remote reference: `google-ml-infra/actions/benchmarking/actions/workload_executors/bazel@<ref>`
+- Local reference: `./ml_actions/./actions/workload_executors/bazel`
+- Remote reference: `google-ml-infra/bap/./actions/workload_executors/bazel@<ref>`
 
 | Input | Required | Description |
 | :--- | :--- | :--- |
@@ -164,7 +164,7 @@ benchmarks {
 
   workload {
     # Point to the standard Bazel executor
-    action: "./ml_actions/benchmarking/actions/workload_executors/bazel"
+    action: "./ml_actions/./actions/workload_executors/bazel"
 
     action_inputs { key: "target" value: "//my_project:my_benchmark_binary" }
 
@@ -220,10 +220,10 @@ benchmarks {
 
   workload {
     # Point to the standard Python executor using the local path
-    action: "./ml_actions/benchmarking/actions/workload_executors/python"
+    action: "./ml_actions/./actions/workload_executors/python"
 
     # Base inputs
-    action_inputs { key: "script_path" value: "benchmarking/scripts/run_pallas.py" }
+    action_inputs { key: "script_path" value: "./scripts/run_pallas.py" }
     action_inputs { key: "python_version" value: "3.11" }
     action_inputs { key: "project_path" value: "." }
 
@@ -442,9 +442,9 @@ Set `ab_mode: true` in your workflow file. You can also specify a custom baselin
 ```yaml
 jobs:
   run_benchmarks:
-    uses: google-ml-infra/actions/.github/workflows/run-benchmarks.yml@main
+    uses: google-ml-infra/bap/.github/workflows/run-benchmarks.yml@main
     with:
-      registry_file: "benchmarking/my_registry.pbtxt"
+      registry_file: "./my_registry.pbtxt"
       ab_mode: true # Enable A/B testing
 ```
 
@@ -511,13 +511,13 @@ To enable publishing, you must set `publish_metrics: true` in your workflow file
 
 The message payload is a JSON-serialized BenchmarkResult protocol buffer (UTF-8 encoded).
 
-Schema Definition: [benchmark_result.proto](https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/benchmark_result.proto)
+Schema Definition: [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)
 
 ### Requesting a Subscription
 
 To consume data for your repository, you must be onboarded as a consumer. Our platform manages the subscription resources to ensure reliability (Dead Letter Queues, retention policies, etc.).
 
-**To onboard, please [raise an issue](https://github.com/google-ml-infra/actions/issues) with the following details:**
+**To onboard, please [raise an issue](https://github.com/google-ml-infra/bap/issues) with the following details:**
 
 1. **Repository Name**: The full repository name including the owner/organization (e.g., google/jax).
 
@@ -536,4 +536,4 @@ If you are using the public topic, the details will be:
 
 You can then configure your client to listen to this subscription using the standard [Google Cloud Pub/Sub libraries](https://docs.cloud.google.com/pubsub/docs/reference/libraries).
 
-**Security Note**: Consumers are strongly encouraged to validate incoming messages before processing them. The [BenchmarkResult]((https://github.com/google-ml-infra/actions/blob/main/benchmarking/proto/benchmark_result.proto)) protocol buffer definition is compatible with [protovalidate](https://github.com/bufbuild/protovalidate), allowing for robust constraints checking.
+**Security Note**: Consumers are strongly encouraged to validate incoming messages before processing them. The [BenchmarkResult]((https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)) protocol buffer definition is compatible with [protovalidate](https://github.com/bufbuild/protovalidate), allowing for robust constraints checking.
