@@ -42,7 +42,7 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
-      registry_file: "benchmarking/e2e_test/test_registry.pbtxt"
+      registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
 
   run_ab_e2e_test:
@@ -52,7 +52,7 @@ jobs:
       pull-requests: write 
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
-      registry_file: "benchmarking/e2e_test/test_registry.pbtxt"
+      registry_file: "e2e_test/test_registry.pbtxt"
       benchmark_filter: "e2e_bazel_benchmark"
       ab_mode: true
       post_pr_comment: true
