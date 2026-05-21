@@ -30,7 +30,7 @@ VALID_SUITE_PBTXT = """
       owner: "cpu-team"
       tags: "team-cpu"
       workload {
-        action: "./ml_actions/benchmarking/actions/workload_executors/bazel"
+        action: "./ml_actions/actions/workload_executors/bazel"
         action_inputs { key: "target" value: "//b:cpu" }
         action_inputs { key: "runtime_flags" value: "--model_name=cpu_model" }
       }
@@ -60,7 +60,7 @@ VALID_SUITE_PBTXT = """
       owner: "gpu-team"
       tags: "team-gpu"
       workload {
-        action: "./user_repo/benchmarking/actions/hlo"
+        action: "./user_repo/actions/hlo"
         action_inputs { key: "gcs_path" value: "gs://bucket/model.hlo" }
         action_inputs { key: "iterations" value: "100" }
       }
@@ -80,7 +80,7 @@ INVALID_SUITE_MISSING_ID_PBTXT = """
       description: "Missing environment_config ID."
       owner: "cpu-team"
       workload {
-        action: "./ml_actions/benchmarking/actions/workload_executors/bazel"
+        action: "./ml_actions/actions/workload_executors/bazel"
       }
       environment_configs {
         runner_label: "linux-x86-n2-32"

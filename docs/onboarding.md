@@ -2,7 +2,7 @@
 
 ## Quick Links
 
--   [GitHub Repository](https://github.com/google-ml-infra/actions)
+-   [GitHub Repository](https://github.com/google-ml-infra/bap)
 -   [Reusable Workflow](https://github.com/google-ml-infra/bap/blob/main/.github/workflows/run-benchmarks.yaml)
 
 ### Schema Definitions
@@ -71,7 +71,7 @@ The reusable workflow supports the following inputs:
 | `benchmark_filter` | No | `""` | Regex to filter by benchmark name (e.g. `resnet.*`). |
 | `environment_filter` | No | `""` | Regex to filter by environment configuration ID (e.g. `a100.*`). |
 | `tag_filter` | No | `""` | Space-separated list of tags. Benchmarks and/or environment configs must match at least one (e.g. `gpu`). |
-| `ml_actions_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/actions to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/bap/.github/workflows/run_benchmarks.yml@v1.5.0"). |
+| `bap_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/actions to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/bap/.github/workflows/run_benchmarks.yml@v1.5.0"). |
 | `job_id` | No | Random | A unique identifier for the top-level job (e.g. `e2e-test`). Used to namespace artifacts. If empty, a random ID is generated. |
 | `ab_mode` | No | `false` | If `true`, runs A/B comparison (baseline vs experiment) and generates an A/B report. |
 | `experiment_ref` | No | Current SHA | Git ref for the experiment in A/B mode. Defaults to the current commit SHA. |
