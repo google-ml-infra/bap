@@ -31,9 +31,7 @@ def load_security_policy() -> SecurityPolicy:
   """Loads the security policy from the package resources."""
   try:
     # Look for the policy file within the current package
-    policy_resource = (
-      resources.files("validate_registry") / "security_policy.json"
-    )
+    policy_resource = resources.files("validate_registry") / "security_policy.json"
 
     if policy_resource.exists():
       with policy_resource.open("r") as f:
