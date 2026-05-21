@@ -328,7 +328,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Execute workload
-        uses: ./ml_actions/benchmarking/actions/dynamic_action_executor
+        uses: ./ml_actions/actions/dynamic_action_executor
         with:
           action: ${{ matrix.workload.action }}
           action_inputs: ${{ matrix.workload.action_inputs && toJson(matrix.workload.action_inputs) || '{}' }}
@@ -516,7 +516,7 @@ jobs:
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9
         with:
           script: |
-            const scriptPath = require('path').resolve('./ml_actions/benchmarking/post_pr_comment/post_pr_comment.js');
+            const scriptPath = require('path').resolve('./ml_actions/post_pr_comment/post_pr_comment.js');
             const postComment = require(scriptPath);
             await postComment({ github, context });
 
