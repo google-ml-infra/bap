@@ -21,7 +21,7 @@ proto_library(
     name = "benchmark_registry_proto",
     srcs = ["benchmark_registry.proto"],
     deps = [
-        "@protovalidate//bap_proto/protovalidate/buf/validate:validate_proto",
+        "@protovalidate//proto/protovalidate/buf/validate:validate_proto",
         "//bap_proto/common:metric_proto",
         "//bap_proto/common:workflow_type_proto",
         "//bap_proto/common:workload_action_proto",
@@ -33,7 +33,7 @@ proto_library(
     name = "benchmark_result_proto",
     srcs = ["benchmark_result.proto"],
     deps = [
-        "@protovalidate//bap_proto/protovalidate/buf/validate:validate_proto",
+        "@protovalidate//proto/protovalidate/buf/validate:validate_proto",
         "@protobuf//:wrappers_proto",
         "@protobuf//:timestamp_proto",
         "//bap_proto/common:metric_proto",
@@ -45,7 +45,7 @@ proto_library(
     name = "benchmark_job_proto",
     srcs = ["benchmark_job.proto"],
     deps = [
-        "@protovalidate//bap_proto/protovalidate/buf/validate:validate_proto",
+        "@protovalidate//proto/protovalidate/buf/validate:validate_proto",
         "//bap_proto/common:metric_proto",
         "//bap_proto/common:workflow_type_proto",
         "//bap_proto/common:workload_action_proto",

@@ -52,7 +52,12 @@ on:
           (e.g., a PR), the commit SHA (github.sha) is used automatically to test changes.
         required: false
         type: string
-        default: "main"
+        default: ""
+      ml_actions_ref:
+        description: "Legacy name for bap_ref. Use bap_ref instead."
+        required: false
+        type: string
+        default: ""
       publish_metrics:
         description: "If true, publishes benchmark results to Google Cloud Pub/Sub."
         required: false
@@ -122,8 +127,9 @@ jobs:
         id: resolve_refs
         shell: bash
         env:
-          # If we are in the bap repo itself, use the current SHA. Otherwise, use the input ref.
-          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref }}
+          # If we are in the bap repo itself, use the current SHA. 
+          # Otherwise, prefer bap_ref, then fall back to ml_actions_ref, then default to main.
+          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref || inputs.ml_actions_ref || 'main' }}
         run: |
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
@@ -198,14 +204,15 @@ jobs:
           IS_PR: ${{ github.event_name == 'pull_request' }}
           PR_BASE: ${{ github.base_ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          # If we are in the actions repo itself, use the current SHA. Otherwise, use the input ref.
-          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref }}
+          # If we are in the bap repo itself, use the current SHA. 
+          # Otherwise, prefer bap_ref, then fall back to ml_actions_ref, then default to main.
+          BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref || inputs.ml_actions_ref || 'main' }}
           SHA: ${{ github.sha }}
         run: |
           echo "::group::Resolve git refs"
           set -euo pipefail
           
-          # Resolve ML Actions ref
+          # Resolve BAP ref
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
           # Resolve experiment ref.
