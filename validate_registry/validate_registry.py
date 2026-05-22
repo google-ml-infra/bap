@@ -8,7 +8,7 @@ from importlib import resources
 from pathlib import Path
 
 from google.protobuf import text_format
-from proto import benchmark_registry_pb2
+from bap_proto import benchmark_registry_pb2
 
 
 class SecurityValidationError(Exception):

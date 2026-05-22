@@ -6,7 +6,7 @@ py_library(
     data = ["security_policy.json"],
     visibility = ["//visibility:public"],
     deps = [
-        "//proto:benchmark_registry_py_proto",
+        "//bap_proto:benchmark_registry_py_proto",
         "@protobuf//:protobuf_python",
     ],
 )
