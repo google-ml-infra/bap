@@ -40,19 +40,19 @@ message BenchmarkJob {
 
   // REQUIRED: The workflow type associated with this run.
   bap.common.WorkflowType workflow_type = 2 [(buf.validate.field).enum = {not_in: [0]}];
-  
+
   // REQUIRED: The human-readable name of the benchmark.
   string benchmark_name = 3 [(buf.validate.field).string.min_len = 1];
-  
+
   // REQUIRED: Description of the benchmark's purpose.
   string description = 4 [(buf.validate.field).string.min_len = 1];
-  
+
   // REQUIRED: Owner or team responsible for the benchmark.
   string owner = 5 [(buf.validate.field).string.min_len = 1];
-  
+
   // REQUIRED: Configuration for the workload executor action.
   bap.common.WorkloadAction workload = 9 [(buf.validate.field).required = true];
-  
+
   // Optional: List of metrics to track.
   repeated bap.common.MetricSpec metrics = 10;
 
@@ -66,6 +66,9 @@ message BenchmarkJob {
 
   // REQUIRED: The environment configuration to run the benchmark on.
   bap.common.EnvironmentConfig environment_config = 13 [(buf.validate.field).required = true];
+
+  // Optional: Map of optional metadata
+  map<string, string> metadata = 14;
 
   // Prevent reuse of deleted tags.
   reserved 6, 7, 8;

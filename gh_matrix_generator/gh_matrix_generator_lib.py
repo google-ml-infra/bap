@@ -191,6 +191,7 @@ class MatrixGenerator:
         base_job.owner = benchmark.owner
         base_job.workload.CopyFrom(workload_action)
         base_job.metrics.extend(benchmark.metrics)
+        base_job.metadata.update(benchmark.metadata)
 
         jobs_to_emit = []
 

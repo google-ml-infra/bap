@@ -18,8 +18,8 @@
 # based on the provided registry_file and filters.
 #
 # Note that GITHUB_WORKSPACE env var is used instead of github.workspace
-# context reference due to https://github.com/actions/runner/issues/2058. 
-# Specifically, github.workspace and runner.workspace don't point to container 
+# context reference due to https://github.com/actions/runner/issues/2058.
+# Specifically, github.workspace and runner.workspace don't point to container
 # valid paths when executing inside a container job.
 name: Run benchmarks
 
@@ -108,6 +108,11 @@ on:
         required: false
         type: string
         default: ""
+      custom_metadata:
+        description: "JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload."
+        required: false
+        type: string
+        default: "{}"
 
     outputs:
       job_id:
@@ -137,7 +142,7 @@ jobs:
         id: resolve_refs
         shell: bash
         env:
-          # If we are in the bap repo itself, use the current SHA. 
+          # If we are in the bap repo itself, use the current SHA.
           # Otherwise, prefer bap_ref, then fall back to ml_actions_ref, then default to main.
           BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref || inputs.ml_actions_ref || 'main' }}
         run: |
@@ -214,14 +219,14 @@ jobs:
           IS_PR: ${{ github.event_name == 'pull_request' }}
           PR_BASE: ${{ github.base_ref }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-          # If we are in the bap repo itself, use the current SHA. 
+          # If we are in the bap repo itself, use the current SHA.
           # Otherwise, prefer bap_ref, then fall back to ml_actions_ref, then default to main.
           BAP_REF: ${{ github.repository == 'google-ml-infra/bap' && github.sha || inputs.bap_ref || inputs.ml_actions_ref || 'main' }}
           SHA: ${{ github.sha }}
         run: |
           echo "::group::Resolve git refs"
           set -euo pipefail
-          
+
           # Resolve BAP ref
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
@@ -292,7 +297,7 @@ jobs:
           if [[ -n "$ENVIRONMENT_FILTER" ]]; then
             ARGS+=(--environment_filter="$ENVIRONMENT_FILTER")
           fi
-          
+
           if [[ -n "$TAG_FILTER" ]]; then
              ARGS+=(--tag_filter "$TAG_FILTER")
           fi
@@ -376,18 +381,21 @@ jobs:
           echo "::group::Set up benchmark environment"
           set -euo pipefail
 
-          # Create TensorBoard output dir and workload artifacts dir.
+          # Create TensorBoard output dir, workload artifacts dir, and metadata dir.
           TENSORBOARD_OUTPUT_DIR="$GITHUB_WORKSPACE/tblogs"
           WORKLOAD_ARTIFACTS_DIR="$GITHUB_WORKSPACE/artifacts"
-          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR"
-          
+          WORKLOAD_METADATA_DIR="$GITHUB_WORKSPACE/metadata"
+          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+
           echo "TENSORBOARD_OUTPUT_DIR: $TENSORBOARD_OUTPUT_DIR"
           echo "WORKLOAD_ARTIFACTS_DIR: $WORKLOAD_ARTIFACTS_DIR"
+          echo "WORKLOAD_METADATA_DIR: $WORKLOAD_METADATA_DIR"
 
           # Export created dirs to GITHUB_ENV.
           {
             echo "TENSORBOARD_OUTPUT_DIR=$TENSORBOARD_OUTPUT_DIR"
             echo "WORKLOAD_ARTIFACTS_DIR=$WORKLOAD_ARTIFACTS_DIR"
+            echo "WORKLOAD_METADATA_DIR=$WORKLOAD_METADATA_DIR"
           } >> "$GITHUB_ENV"
 
           # Inject custom environment variables if provided.
@@ -446,19 +454,22 @@ jobs:
           BENCHMARK_NAME: ${{ matrix.benchmark_name }}
           ENVIRONMENT_CONFIG_ID: ${{ matrix.environment_config.id }}
           METRIC_SPECS_JSON: '${{ toJson(matrix.metrics) }}'
+          STATIC_METADATA_JSON: '${{ toJson(matrix.metadata) }}'
+          CUSTOM_METADATA_JSON: '${{ inputs.custom_metadata }}'
           WORKFLOW_TYPE: ${{ matrix.workflow_type }}
           RUNNER_LABEL: ${{ matrix.environment_config.runner_label }}
           RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
           BRANCH: ${{ steps.commit_info.outputs.ref }}
           BENCHMARK_RESULTS_DIR: "${{ github.workspace }}/results"
+          WORKLOAD_METADATA_DIR: "${{ env.WORKLOAD_METADATA_DIR }}"
         id: parse_tb_logs
         working-directory: ml_actions
         shell: bash
         run: |
           echo "::group::Parse TB event files"
           set -euo pipefail
-          mkdir -p "$BENCHMARK_RESULTS_DIR"          
+          mkdir -p "$BENCHMARK_RESULTS_DIR"
           BENCHMARK_RESULT_FILE="$BENCHMARK_RESULTS_DIR/benchmark_result.json"
 
           bazel run //tb_parser \
@@ -477,7 +488,10 @@ jobs:
             --workflow_type="$WORKFLOW_TYPE" \
             --runner_label="$RUNNER_LABEL" \
             --branch="$BRANCH" \
-            --run_url="$RUN_URL"
+            --run_url="$RUN_URL" \
+            --static_metadata_json="$STATIC_METADATA_JSON" \
+            --custom_metadata_json="$CUSTOM_METADATA_JSON" \
+            --workload_metadata_dir="$WORKLOAD_METADATA_DIR"
 
           {
             echo "benchmark_results_dir=$BENCHMARK_RESULTS_DIR"
@@ -513,7 +527,7 @@ jobs:
             --ui_event_filters=-info \
             -- \
             --metric_specs_json="$METRIC_SPECS_JSON" \
-            --benchmark_result_file="$BENCHMARK_RESULT_FILE" 
+            --benchmark_result_file="$BENCHMARK_RESULT_FILE"
 
           echo "::endgroup::"
 
@@ -639,7 +653,7 @@ jobs:
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     if: always()
-    
+
     steps:
       - name: Check out ML actions repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # ratchet:actions/checkout@v5
@@ -658,7 +672,7 @@ jobs:
       - name: Run artifact bundler
         env:
           JOB_ID: "${{ needs.generate_matrix.outputs.job_id }}"
-        shell: bash 
+        shell: bash
         working-directory: ml_actions
         run: |
           echo "::group::Run artifact bundler"
@@ -667,7 +681,7 @@ jobs:
           RAW_DIR="$GITHUB_WORKSPACE/raw_artifacts"
           FINAL_DIR="$GITHUB_WORKSPACE/final_artifacts"
           mkdir -p "$FINAL_DIR"
-          
+
           bazel run //artifact_bundler \
             --noshow_progress \
             --noshow_loading_progress \
@@ -676,7 +690,7 @@ jobs:
             --raw_dir="$RAW_DIR" \
             --final_dir="$FINAL_DIR" \
             --job_id="$JOB_ID"
-          
+
           echo "::endgroup::"
 
       - name: Upload bundled artifacts
