@@ -523,7 +523,7 @@ To consume data for your repository, you must be onboarded as a consumer. Our pl
 
 2. **Principal**: The service account email that will consume the data (e.g., my-dashboard-sa@my-project.iam.gserviceaccount.com).
 
-3. **Confidentiality**: All benchmarks run via this platform are published to a single shared public topic. We will configure a filter on your repository name so you only receive your own data. **Note:** If your data cannot be made public (e.g., private repo, confidential results), please specify in the issue that you require a private topic.
+3. **Data Sensitivity**: All benchmarks run via this platform are published to a single shared public topic. We will configure a filter on your repository name so you only receive your own data. **Note:** If your data cannot be made public (e.g., private repo, restricted results), please specify in the issue that you require a private topic.
 
 ### Connecting to your Subscription
 
