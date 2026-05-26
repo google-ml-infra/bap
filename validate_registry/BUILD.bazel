@@ -17,6 +17,7 @@ load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 py_library(
     name = "validate_registry_lib",
     srcs = ["validate_registry.py"],
+    data = ["security_policy.json"],
     visibility = ["//visibility:public"],
     deps = [
         "@protobuf//:protobuf_python",
@@ -35,8 +36,10 @@ py_binary(
 py_test(
     name = "validate_registry_test",
     srcs = ["validate_registry_test.py"],
-    data = glob(["validate_registry_test/*.pbtxt"]),
+    data = ["security_policy.json"] + glob(["validate_registry_test/*.pbtxt"]),
     deps = [
         ":validate_registry_lib",
+        "//bap_proto/common:workflow_type_py_proto",
+        "@pypi//pytest:pkg",
     ],
 )
