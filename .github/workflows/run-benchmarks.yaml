@@ -103,6 +103,11 @@ on:
         required: false
         type: string
         default: "linux-x86-n2-16"
+      custom_env_vars:
+        description: "Multi-line string of environment variables to inject into the workflow environment (formatted like a .env file)."
+        required: false
+        type: string
+        default: ""
 
     outputs:
       job_id:
@@ -365,6 +370,8 @@ jobs:
 
       - name: Set up benchmark environment
         shell: bash
+        env:
+          CUSTOM_ENV_VARS: ${{ inputs.custom_env_vars }}
         run: |
           echo "::group::Set up benchmark environment"
           set -euo pipefail
@@ -382,6 +389,38 @@ jobs:
             echo "TENSORBOARD_OUTPUT_DIR=$TENSORBOARD_OUTPUT_DIR"
             echo "WORKLOAD_ARTIFACTS_DIR=$WORKLOAD_ARTIFACTS_DIR"
           } >> "$GITHUB_ENV"
+
+          # Inject custom environment variables if provided.
+          if [[ -n "$CUSTOM_ENV_VARS" ]]; then
+            echo "Injecting custom environment variables..."
+            set +x  # Disable command echoing to prevent leaking vars in logs
+            while IFS= read -r line || [[ -n "$line" ]]; do
+              # Remove leading and trailing whitespace
+              line="${line#"${line%%[![:space:]]*}"}"
+              line="${line%"${line##*[![:space:]]}"}"
+
+              # Skip empty lines and comments
+              [[ -z "$line" || "$line" == \#* ]] && continue
+
+              # Extract variable name (part before the first '=')
+              var_name="${line%%=*}"
+
+              # Validate variable name: strictly alphanumeric/underscore, starts with non-digit.
+              # This prevents bash array index injection (e.g. foo[$(rm -rf /)])
+              # and ensures compatibility with standard env var naming.
+              if [[ ! "$var_name" =~ ^[a-zA-Z_][a-zA-Z0-9_]*$ ]]; then
+                echo "Error: Invalid environment variable name: $var_name"
+                exit 1
+              fi
+
+              if [[ -v "$var_name" ]]; then
+                echo "Error: Attempted to overwrite existing environment variable: $var_name"
+                exit 1
+              fi
+              printf "%s\n" "$line" >> "$GITHUB_ENV"
+            done <<< "$CUSTOM_ENV_VARS"
+            set -x  # Re-enable command echoing
+          fi
 
           echo "::endgroup::"
 
