@@ -44,6 +44,7 @@ jobs:
     with:
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
+      publish_metrics: true 
 
   run_ab_e2e_test:
     name: A/B Mode E2E Test
