@@ -80,6 +80,7 @@ The reusable workflow supports the following inputs:
 | `publish_metrics` | No | `false` | If `true`, publishes benchmark results to Google Cloud Pub/Sub. |
 | `pub_sub_gcp_project_id` | No | `ml-oss-benchmarking-production` | GCP project ID for Pub/Sub. |
 | `pub_sub_gcp_topic_id` | No | `public-results-prod` | Pub/Sub topic ID to publish results to. |
+| `runner` | No | `linux-x86-n2-16` | The runner label to use for standard jobs. |
 
 ### Workflow Outputs
 
