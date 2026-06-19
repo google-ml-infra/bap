@@ -28,6 +28,7 @@ def main():
   print("E2E test benchmark script starting.")
   tblog_dir = os.environ.get("TENSORBOARD_OUTPUT_DIR")
   artifact_dir = os.environ.get("WORKLOAD_ARTIFACTS_DIR")
+  metadata_dir = os.environ.get("WORKLOAD_METADATA_DIR")
 
   if not tblog_dir:
     print("Error: TENSORBOARD_OUTPUT_DIR env var not set.", file=sys.stderr)
@@ -56,7 +57,7 @@ def main():
 
     print(f"Successfully wrote 5 wall_time metrics to {tblog_dir}")
 
-    # Create workload wrtifact
+    # Create workload artifact
     if artifact_dir:
       print(f"Received WORKLOAD_ARTIFACTS_DIR: {artifact_dir}")
       artifact_path = os.path.join(artifact_dir, "test_artifact.txt")
@@ -65,6 +66,18 @@ def main():
       print(f"Successfully wrote artifact to {artifact_path}")
     else:
       print("Warning: WORKLOAD_ARTIFACTS_DIR env var not set.")
+
+    # Create dynamic metadata
+    if metadata_dir:
+      print(f"Received WORKLOAD_METADATA_DIR: {metadata_dir}")
+      metadata_path = os.path.join(metadata_dir, "workload_metadata.json")
+      import json
+
+      with open(metadata_path, "w") as f:
+        json.dump({"driver_version": "535.100", "cuda_version": "12.2"}, f)
+      print(f"Successfully wrote dynamic metadata to {metadata_path}")
+    else:
+      print("Warning: WORKLOAD_METADATA_DIR env var not set.")
 
     print("E2E test benchmark script finished.")
 

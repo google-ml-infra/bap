@@ -26,13 +26,13 @@ import "bap_proto/common/workflow_type.proto";
 message ComputedStat {
   // REQUIRED: The name of the metric (e.g., "wall_time").
   string metric_name = 1 [(buf.validate.field).string.min_len = 1];
-  
+
   // REQUIRED: The statistic that was computed (e.g., MEAN, P99).
   bap.common.Stat stat = 2 [(buf.validate.field).enum = {not_in: [0]}];
 
   // REQUIRED: The numeric value of the computed statistic.
   google.protobuf.DoubleValue value = 3 [(buf.validate.field).required = true];
-  
+
   // REQUIRED: The unit of measurement (e.g., "ms", "percent", "gb").
   string unit = 4 [(buf.validate.field).string.min_len = 1];
 }
@@ -73,4 +73,7 @@ message BenchmarkResult {
 
   // REQUIRED: Identifier for the environment configuration.
   string environment_config_id = 11 [(buf.validate.field).string.min_len = 1];
+
+  // Optional: Map of optional metadata
+  map<string, string> metadata = 12;
 }

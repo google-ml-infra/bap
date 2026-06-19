@@ -29,7 +29,7 @@ message BenchmarkConfig {
 
   // REQUIRED: A brief description of the benchmark's purpose.
   string description = 2 [(buf.validate.field).string.min_len = 1];
- 
+
   // REQUIRED: The owner or team responsible for the benchmark.
   string owner = 3 [(buf.validate.field).string.min_len = 1];
 
@@ -44,6 +44,9 @@ message BenchmarkConfig {
 
   // Optional: Global tags that apply to all environments (e.g. "pytorch", "vision").
   repeated string tags = 10;
+
+  // Optional: Map of optional metadata
+  map<string, string> metadata = 11;
 
   // Prevent reuse of deleted tags.
   reserved 5, 6, 7;

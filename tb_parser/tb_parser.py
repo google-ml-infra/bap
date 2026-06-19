@@ -15,6 +15,8 @@
 """Script to extract statistics from TensorFlow event files and produce a BenchmarkResult JSON artifact."""
 
 import argparse
+import json
+import os
 import sys
 from google.protobuf import json_format, timestamp_pb2
 from utils import metric_parser
@@ -30,6 +32,29 @@ def _format_validation_error(violation) -> str:
     for elem in violation.proto.field.elements
   )
   return f"  - Field: {field_path_str}\n    Error: {violation.proto.message}"
+
+
+def _load_dynamic_metadata(metadata_dir: str) -> dict[str, str]:
+  """Loads and merges all JSON metadata files from the specified directory."""
+  merged_metadata = {}
+  if not metadata_dir or not os.path.isdir(metadata_dir):
+    return merged_metadata
+
+  for filename in os.listdir(metadata_dir):
+    if filename.endswith(".json"):
+      file_path = os.path.join(metadata_dir, filename)
+      try:
+        with open(file_path, "r") as f:
+          data = json.load(f)
+          if isinstance(data, dict):
+            # Ensure all values are strings as per proto map<string, string>
+            merged_metadata.update({k: str(v) for k, v in data.items()})
+          else:
+            print(f"Warning: Skipping {filename} as it is not a JSON object.")
+      except Exception as e:
+        print(f"Warning: Failed to parse metadata file {filename}: {e}")
+
+  return merged_metadata
 
 
 def main():
@@ -50,6 +75,23 @@ def main():
   parser.add_argument("--runner_label", required=True, help="e.g. linux-x86-n2-32")
   parser.add_argument("--branch", required=True, help="e.g. main")
   parser.add_argument("--run_url", required=True, help="GitHub Actions Run URL")
+  parser.add_argument(
+    "--static_metadata_json",
+    required=False,
+    default="{}",
+    help="JSON map of static metadata from the registry.",
+  )
+  parser.add_argument(
+    "--custom_metadata_json",
+    required=False,
+    default="{}",
+    help="JSON map of custom metadata from the workflow input.",
+  )
+  parser.add_argument(
+    "--workload_metadata_dir",
+    required=False,
+    help="Directory containing dynamic metadata JSON files from the workload.",
+  )
 
   args = parser.parse_args()
 
@@ -61,6 +103,33 @@ def main():
 
   tb_parser = tb_parser_lib.TensorBoardParser(metric_specs)
   computed_stats = tb_parser.parse_and_compute(args.tblog_dir)
+
+  # Merge metadata with the following priority (highest to lowest):
+  # 1. Dynamic metadata (emitted by workload at runtime)
+  # 2. Custom metadata (supplied via workflow input)
+  # 3. Static metadata (declared in the benchmark registry)
+  try:
+    final_metadata = json.loads(args.static_metadata_json) or {}
+    custom_metadata = json.loads(args.custom_metadata_json) or {}
+
+    if not isinstance(final_metadata, dict):
+      print(
+        f"Warning: static_metadata_json is not a JSON object: {args.static_metadata_json}"
+      )
+      final_metadata = {}
+    if not isinstance(custom_metadata, dict):
+      print(
+        f"Warning: custom_metadata_json is not a JSON object: {args.custom_metadata_json}"
+      )
+      custom_metadata = {}
+
+    final_metadata.update(custom_metadata)
+  except json.JSONDecodeError as e:
+    print(f"Error parsing metadata JSON: {e}", file=sys.stderr)
+    sys.exit(1)
+
+  dynamic_metadata = _load_dynamic_metadata(args.workload_metadata_dir)
+  final_metadata.update(dynamic_metadata)
 
   ts = timestamp_pb2.Timestamp()
   ts.GetCurrentTime()
@@ -78,6 +147,7 @@ def main():
     runner_label=args.runner_label,
     branch=args.branch,
     run_url=args.run_url,
+    metadata=final_metadata,
   )
 
   try:
