@@ -28,6 +28,9 @@ def parse_metric_specs_from_json(
   Gracefully handles "null" or empty inputs by returning an empty list.
   Raises ValueError if the input string is not valid JSON.
   """
+  if not metric_specs_json:
+    return []
+
   try:
     metric_specs_list = json.loads(metric_specs_json)
   except json.JSONDecodeError as e:
