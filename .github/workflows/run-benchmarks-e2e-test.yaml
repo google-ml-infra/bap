@@ -28,6 +28,12 @@ on:
       - '.github/workflows/run-benchmarks-e2e-test.yaml'
       - '.github/workflows/run-benchmarks.yaml'
   workflow_dispatch:
+    inputs:
+      bisect_run_id:
+        description: 'UUID for bisect run'
+        required: false
+        type: string
+        default: 'test-uuid-1234'
 
 # Cancel any previous runs on the same branch when a new commit is pushed.
 concurrency:
@@ -45,7 +51,7 @@ jobs:
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
       publish_metrics: true
-      custom_metadata: '{"bisect_run_id": "test-uuid-1234"}'
+      custom_metadata: '{"bisect_run_id": "${{ github.event.inputs.bisect_run_id }}"}'
 
   run_ab_e2e_test:
     name: A/B Mode E2E Test
