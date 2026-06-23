@@ -109,8 +109,8 @@ def main():
   # 2. Custom metadata (supplied via workflow input)
   # 3. Static metadata (declared in the benchmark registry)
   try:
-    final_metadata = json.loads(args.static_metadata_json) or {}
-    custom_metadata = json.loads(args.custom_metadata_json) or {}
+    final_metadata = json.loads(args.static_metadata_json or "{}") or {}
+    custom_metadata = json.loads(args.custom_metadata_json or "{}") or {}
 
     if not isinstance(final_metadata, dict):
       print(
