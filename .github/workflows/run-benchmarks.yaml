@@ -430,6 +430,26 @@ jobs:
             set -x  # Re-enable command echoing
           fi
 
+          # Bootstrap Bazel to execute metric collection and regression analysis tooling
+          if ! command -v bazel &> /dev/null; then
+            echo "Bazel not found. Bootstrapping bazelisk..."
+            curl -fSsL -o /usr/local/bin/bazel https://github.com/bazelbuild/bazelisk/releases/download/v1.19.0/bazelisk-linux-amd64
+            chmod +x /usr/local/bin/bazel
+          else
+            echo "Bazel already present: $(command -v bazel)"
+          fi
+
+          # Bootstrap GCC (Bazel requires this to auto-configure its C++ toolchain)
+          if ! command -v gcc &> /dev/null; then
+            echo "GCC not found. Installing build dependencies..."
+            if ! apt-get update || ! apt-get install -y gcc g++; then
+              echo "Primary install failed, check network or permissions."
+              exit 1
+            fi
+          else
+            echo "GCC already present: $(command -v gcc)"
+          fi
+
           echo "::endgroup::"
 
       - name: Execute workload
