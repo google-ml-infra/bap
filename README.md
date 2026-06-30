@@ -1,10 +1,32 @@
-# Google BAP (Benchmarking Automation Platform)
+# BAP (Benchmarking Automation Platform)
 
-This repository contains reusable benchmarking, workflows and other tooling for use 
-across Google ML projects.
+## What is BAP?
 
-These tools are not intended to be generally reusable outside these projects
-and may require specific hardware setups and various prerequisites not fully
-documented in this repo.
+BAP is a GitHub-native automation platform designed to standardize performance
+benchmarking and regression testing for open-source ML frameworks.
 
-- [`actions`](docs/onboarding.md): Composite actions used by benchmarking pipelines.
+At its core, BAP provides a unified system for **defining**, **executing**, and
+**tracking** benchmarks. It replaces bespoke tooling with a standardized loop:
+
+-   **Define**: Declare benchmarks in a simple .pbtxt registry.
+-   **Run**: Execute workloads (Python, Bazel, etc.) using a reusable GitHub
+    Actions workflow.
+-   **Collect**: Automatically parse and standardize metrics from TensorBoard
+    logs.
+
+## Key Features
+
+BAP provides various capabilities for performance management:
+
+-   **Static Threshold Analysis**: Automatically compares metrics against a
+    baseline and fails CI jobs if a regression is detected.
+-   **A/B Testing**: A dedicated mode for head-to-head performance comparisons
+    in presubmit to isolate noise and detect regressions accurately.
+-   **Downstream Consumer Integration**: Publishes results via Pub/Sub to
+    for consumption.
+
+## Getting Started
+
+-   [Onboarding Guide](https://github.com/google-ml-infra/bap/docs/onboarding.md): Step-by-step guide for
+    setting up a benchmark registry and configuring workflows using BAP.
+

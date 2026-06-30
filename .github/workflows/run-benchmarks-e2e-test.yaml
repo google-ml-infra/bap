@@ -29,11 +29,11 @@ on:
       - '.github/workflows/run-benchmarks.yaml'
   workflow_dispatch:
     inputs:
-      bisect_run_id:
-        description: 'UUID for bisect run'
+      custom_metadata:
+        description: "JSON string of metadata to append (e.g., for MLCompass tracking)"
         required: false
         type: string
-        default: 'test-uuid-1234'
+        default: "{}"
 
 # Cancel any previous runs on the same branch when a new commit is pushed.
 concurrency:
@@ -51,7 +51,7 @@ jobs:
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
       publish_metrics: true
-      custom_metadata: '{"bisect_run_id": "${{ github.event.inputs.bisect_run_id }}"}'
+      custom_metadata: ${{ inputs.custom_metadata }}
 
   run_ab_e2e_test:
     name: A/B Mode E2E Test
@@ -64,6 +64,7 @@ jobs:
       benchmark_filter: "e2e_bazel_benchmark"
       ab_mode: true
       post_pr_comment: true
+      custom_metadata: ${{ inputs.custom_metadata }}
 
   run_custom_env_e2e_test:
     name: Custom Env E2E Test
@@ -77,4 +78,4 @@ jobs:
       custom_env_vars: |
         E2E_TEST_VAR=hello_from_e2e_test
         ANOTHER_VAR=123
-
+      custom_metadata: ${{ inputs.custom_metadata }}
