@@ -51,6 +51,8 @@ jobs:
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
       publish_metrics: true
+      pub_sub_gcp_project_id: "ml-oss-benchmarking-testing"
+      pub_sub_gcp_topic_id: "public-results-dev"
       custom_metadata: ${{ inputs.custom_metadata }}
 
   run_ab_e2e_test:
