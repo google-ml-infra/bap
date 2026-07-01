@@ -34,6 +34,16 @@ on:
         required: false
         type: string
         default: "{}"
+      benchmark_filter:
+        description: "Regex to filter by benchmark name (e.g., 'attention.*')."
+        required: false
+        type: string
+        default: ""
+      environment_filter:
+        description: "Regex to filter by environment configuration ID (e.g., 'b200.*')."
+        required: false
+        type: string
+        default: ""
 
 # Cancel any previous runs on the same branch when a new commit is pushed.
 concurrency:
@@ -54,6 +64,8 @@ jobs:
       pub_sub_gcp_project_id: "ml-oss-benchmarking-testing"
       pub_sub_gcp_topic_id: "public-results-dev"
       custom_metadata: ${{ inputs.custom_metadata }}
+      benchmark_filter: ${{ inputs.benchmark_filter }}
+      environment_filter: ${{ inputs.environment_filter }}
 
   run_ab_e2e_test:
     name: A/B Mode E2E Test
