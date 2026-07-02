@@ -4,7 +4,7 @@ version = "0.1.0"
 requires-python = "~=3.11"
 
 dependencies = [
-    "protovalidate == 1.0.0",
+    "protovalidate == 1.2.0",
     "tensorflow",
     "numpy",
     "tensorboard",
