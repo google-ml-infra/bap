@@ -35,6 +35,10 @@ inputs:
     description: "Hardware-specific runtime flags, appended to runtime_flags."
     required: false
     default: ""
+  teardown:
+    description: "If true, shuts down the Bazel daemon at the end of the run."
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -65,4 +69,14 @@ runs:
           -- \
           $ARGS
 
+        echo "::endgroup::"
+
+    - name: Teardown Bazel environment
+      if: ${{ inputs.teardown == 'true' }}
+      shell: bash
+      working-directory: user_repo
+      run: |
+        echo "::group::Teardown Bazel environment"
+        set -euo pipefail
+        bazel clean --expunge || echo "Bazel clean failed or not needed."
         echo "::endgroup::"

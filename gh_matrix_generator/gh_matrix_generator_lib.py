@@ -181,6 +181,16 @@ class MatrixGenerator:
         for key, value in env_config.workload_action_inputs.items():
           workload_action.action_inputs[key] = value
 
+        # Determine teardown behavior.
+        # Default to 'true' for A/B Colocated mode to ensure cold starts between sequential runs.
+        # This is only applied if the user hasn't already provided a 'teardown' input.
+        is_colocated = (
+          benchmark.ab_strategy
+          == benchmark_registry_pb2.BenchmarkConfig.AbStrategy.COLOCATED
+        )
+        if is_colocated and "teardown" not in workload_action.action_inputs:
+          workload_action.action_inputs["teardown"] = "true"
+
         # Build the base BenchmarkJob proto
         base_job = benchmark_job_pb2.BenchmarkJob()
         base_job.config_id = config_id
@@ -196,19 +206,32 @@ class MatrixGenerator:
         jobs_to_emit = []
 
         if ab_mode:
-          # Baseline job
-          baseline_job = benchmark_job_pb2.BenchmarkJob()
-          baseline_job.CopyFrom(base_job)
-          baseline_job.ab_test_group = benchmark_job_pb2.AbTestGroup.BASELINE
-          baseline_job.checkout_ref = baseline_ref
-          jobs_to_emit.append(baseline_job)
+          if (
+            benchmark.ab_strategy
+            == benchmark_registry_pb2.BenchmarkConfig.AbStrategy.COLOCATED
+          ):
+            # A/B Colocated mode: single job running both sequentially.
+            colocated_job = benchmark_job_pb2.BenchmarkJob()
+            colocated_job.CopyFrom(base_job)
+            colocated_job.ab_test_group = benchmark_job_pb2.AbTestGroup.COLOCATED
+            colocated_job.baseline_ref = baseline_ref
+            colocated_job.experiment_ref = experiment_ref
+            jobs_to_emit.append(colocated_job)
+          else:
+            # Standard A/B mode (PARALLEL): separate parallel jobs.
+            # Baseline job
+            baseline_job = benchmark_job_pb2.BenchmarkJob()
+            baseline_job.CopyFrom(base_job)
+            baseline_job.ab_test_group = benchmark_job_pb2.AbTestGroup.BASELINE
+            baseline_job.checkout_ref = baseline_ref
+            jobs_to_emit.append(baseline_job)
 
-          # Experiment job
-          experiment_job = benchmark_job_pb2.BenchmarkJob()
-          experiment_job.CopyFrom(base_job)
-          experiment_job.ab_test_group = benchmark_job_pb2.AbTestGroup.EXPERIMENT
-          experiment_job.checkout_ref = experiment_ref
-          jobs_to_emit.append(experiment_job)
+            # Experiment job
+            experiment_job = benchmark_job_pb2.BenchmarkJob()
+            experiment_job.CopyFrom(base_job)
+            experiment_job.ab_test_group = benchmark_job_pb2.AbTestGroup.EXPERIMENT
+            experiment_job.checkout_ref = experiment_ref
+            jobs_to_emit.append(experiment_job)
         else:
           # Standard mode (single job)
           jobs_to_emit.append(base_job)

@@ -315,5 +315,144 @@ def test_generate_matrix_ab_mode_presubmit(subtests):
     assert names.count("gpu_benchmark") == 2
 
 
+def test_generate_matrix_colocated_ab_mode():
+  """Tests that A/B Colocated benchmarks generate a single job with both refs."""
+  colocated_pbtxt = """
+    benchmarks {
+      name: "colocated_bench"
+      description: "An A/B Colocated benchmark."
+      owner: "perf-team"
+      ab_strategy: COLOCATED
+      workload {
+        action: "./ml_actions/actions/workload_executors/python"
+      }
+      environment_configs {
+        id: "tpu_host"
+        runner_label: "linux-x86-ct5lp"
+        container_image: "gcr.io/testing/tpu-container:latest"
+      }
+    }
+  """
+  suite = text_format.Parse(colocated_pbtxt, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+
+  matrix = generator.generate(
+    suite,
+    github_event="pull_request",
+    ab_mode=True,
+    baseline_ref="main",
+    experiment_ref="patch-1",
+  )
+
+  # Expect 1 entry (A/B Colocated mode emits a single job)
+  assert len(matrix) == 1
+  job = matrix[0]
+
+  assert job["benchmark_name"] == "colocated_bench"
+  assert job["ab_test_group"] == "COLOCATED"
+  assert job["baseline_ref"] == "main"
+  assert job["experiment_ref"] == "patch-1"
+  # checkout_ref should not be set
+  assert "checkout_ref" not in job
+
+
+def test_generate_matrix_teardown_propagation():
+  """Tests that the teardown input is correctly passed through."""
+  teardown_pbtxt = """
+    benchmarks {
+      name: "teardown_bench"
+      description: "A benchmark with teardown."
+      owner: "perf-team"
+      workload {
+        action: "./ml_actions/actions/workload_executors/python"
+        action_inputs {
+          key: "script_path"
+          value: "run.py"
+        }
+        action_inputs {
+          key: "teardown"
+          value: "true"
+        }
+      }
+      environment_configs {
+        id: "tpu_host"
+        runner_label: "linux-x86-ct5lp"
+        container_image: "gcr.io/testing/tpu-container:latest"
+      }
+    }
+  """
+  suite = text_format.Parse(teardown_pbtxt, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+
+  matrix = generator.generate(suite, github_event="push")
+
+  assert len(matrix) == 1
+  job = matrix[0]
+
+  # Input should be present in action_inputs
+  assert job["workload"]["action_inputs"]["teardown"] == "true"
+  assert job["workload"]["action_inputs"]["script_path"] == "run.py"
+
+
+def test_generate_matrix_teardown_default_colocated():
+  """Tests that teardown defaults to 'true' for A/B Colocated benchmarks."""
+  colocated_pbtxt = """
+    benchmarks {
+      name: "default_teardown_bench"
+      description: "A colocated benchmark with default teardown."
+      owner: "perf-team"
+      ab_strategy: COLOCATED
+      workload {
+        action: "./ml_actions/actions/workload_executors/python"
+      }
+      environment_configs {
+        id: "tpu_host"
+        runner_label: "linux-x86-ct5lp"
+        container_image: "gcr.io/testing/tpu-container:latest"
+      }
+    }
+  """
+  suite = text_format.Parse(colocated_pbtxt, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+
+  matrix = generator.generate(suite, github_event="push")
+
+  job = matrix[0]
+  # Should default to 'true' in action_inputs because it's COLOCATED
+  assert job["workload"]["action_inputs"]["teardown"] == "true"
+
+
+def test_generate_matrix_teardown_explicit_false_colocated():
+  """Tests that explicit 'false' for teardown is respected even for COLOCATED."""
+  colocated_pbtxt = """
+    benchmarks {
+      name: "false_teardown_bench"
+      description: "A colocated benchmark with explicit false teardown."
+      owner: "perf-team"
+      ab_strategy: COLOCATED
+      workload {
+        action: "./ml_actions/actions/workload_executors/python"
+        action_inputs {
+          key: "teardown"
+          value: "false"
+        }
+      }
+      environment_configs {
+        id: "tpu_host"
+        runner_label: "linux-x86-ct5lp"
+        container_image: "gcr.io/testing/tpu-container:latest"
+      }
+    }
+  """
+  suite = text_format.Parse(colocated_pbtxt, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+
+  matrix = generator.generate(suite, github_event="push")
+
+  job = matrix[0]
+  # Explicit 'false' should be respected
+  assert job["workload"]["action_inputs"]["teardown"] == "false"
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main(sys.argv))
