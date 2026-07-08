@@ -480,7 +480,7 @@ jobs:
 
 ## Artifact Bundling
 
-To prevent the Github Actions workflow run from being cluttered with dozens of artifacts from individual benchmark jobs, BAP automatically merges the results from the parallel matrix into a single, unified GitHub Actions artifact per top-level job named `artifacts-<job_id>`.
+To prevent the GitHub Actions workflow run from being cluttered with dozens of artifacts from individual benchmark jobs, BAP automatically merges the results from the parallel matrix into a single, unified GitHub Actions artifact per top-level job named `artifacts-<job_id>`.
 
 Note: The individual intermediate artifacts generated during the matrix run are ephemeral and automatically cleaned up by the platform.
 
@@ -547,7 +547,7 @@ Schema Definition: [benchmark_result.proto](https://github.com/google-ml-infra/b
 
 To consume data for your repository, you must be onboarded as a consumer. Our platform manages the subscription resources to ensure reliability (Dead Letter Queues, retention policies, etc.).
 
-**To onboard, please [raise an issue](https://github.com/google-ml-infra/bap/issues) with the following details:**
+To onboard, please [submit a subscription request](https://github.com/google-ml-infra/bap/issues/new?template=pub-sub-subscription-request.md) using our issue template.
 
 1. **Repository Name**: The full repository name including the owner/organization (e.g., google/jax).
 
