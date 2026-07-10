@@ -27,6 +27,6 @@ BAP provides various capabilities for performance management:
 
 ## Getting Started
 
--   [Onboarding Guide](https://github.com/google-ml-infra/bap/docs/onboarding.md): Step-by-step guide for
+-   [Onboarding Guide](docs/onboarding.md): Step-by-step guide for
     setting up a benchmark registry and configuring workflows using BAP.
 
