@@ -52,25 +52,28 @@ concurrency:
 
 jobs:
   run_standard_e2e_test:
-    name: Standard E2E Test
+    name: Standard E2E test
     permissions:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      job_id: "e2e_standard"
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
+      post_pr_comment: true
       custom_metadata: ${{ inputs.custom_metadata }}
       benchmark_filter: ${{ inputs.benchmark_filter }}
       environment_filter: ${{ inputs.environment_filter }}
 
   run_ab_e2e_test:
-    name: A/B Mode E2E Test
+    name: A/B mode E2E test
     permissions:
       contents: read
       pull-requests: write 
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      job_id: "e2e_ab"
       registry_file: "e2e_test/test_registry.pbtxt"
       benchmark_filter: "e2e_bazel_benchmark"
       ab_mode: true
@@ -78,12 +81,13 @@ jobs:
       custom_metadata: ${{ inputs.custom_metadata }}
 
   run_custom_env_e2e_test:
-    name: Custom Env E2E Test
+    name: Custom env E2E test
     permissions:
       contents: read
       pull-requests: write
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      job_id: "e2e_custom_env"
       registry_file: "e2e_test/test_registry.pbtxt"
       benchmark_filter: "e2e_python_benchmark_summary_v2"
       custom_env_vars: |

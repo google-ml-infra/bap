@@ -184,9 +184,9 @@ def test_generate_report_pass():
     results, matrix, "http://repo", "TestFlow"
   )
 
-  assert success is True
+  assert success
   assert "PASS" in report
-  assert "**Global Status:** PASS" in report
+  assert "**Global Status:** 🟢 PASS" in report
 
 
 def test_generate_report_fail_latency():
@@ -207,9 +207,9 @@ def test_generate_report_fail_latency():
     results, matrix, "http://repo", "TestFlow"
   )
 
-  assert success is False
+  assert not success
   assert "REGRESSION" in report
-  assert "**Global Status:** FAIL" in report
+  assert "**Global Status:** 🔴 FAIL" in report
 
 
 def test_generate_report_fail_accuracy():
@@ -236,7 +236,7 @@ def test_generate_report_fail_accuracy():
     results, matrix, "http://repo", "TestFlow"
   )
 
-  assert success is False
+  assert not success
   assert "REGRESSION" in report
 
 
@@ -259,7 +259,7 @@ def test_generate_report_undetermined():
   )
 
   # Should warn but not fail
-  assert success is True
+  assert success
   assert "UNDETERMINED" in report
   assert "∞" in report
 
@@ -278,9 +278,9 @@ def test_missing_experiment_fails():
     results, {}, "http://repo", "TestFlow"
   )
 
-  assert success is False
+  assert not success
   assert "FAILED (Experiment Missing)" in report
-  assert "**Global Status:** FAIL" in report
+  assert "**Global Status:** 🔴 FAIL" in report
 
 
 def test_missing_baseline_warns():
@@ -297,9 +297,9 @@ def test_missing_baseline_warns():
     results, {}, "http://repo", "TestFlow"
   )
 
-  assert success is True
+  assert success
   assert "Incomplete (Baseline Missing)" in report
-  assert "**Global Status:** PASS" in report
+  assert "**Global Status:** 🟢 PASS" in report
 
 
 def test_link_generation():

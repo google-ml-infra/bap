@@ -89,10 +89,10 @@ on:
         type: string
         default: ""
       post_pr_comment:
-        description: "If true and ab_mode is enabled, posts the A/B report as a sticky comment on the PR."
+        description: "If true, posts the benchmark report as a sticky comment on the PR."
         required: false
         type: boolean
-        default: true
+        default: false
       job_id:
         description: "A unique identifier for the top-level job (e.g. 'e2e-test'). Used to namespace artifacts. If empty, a random ID is generated."
         required: false
@@ -125,7 +125,7 @@ permissions:
 
 jobs:
   validate_registry:
-    name: Validate Registry Security
+    name: Validate registry security
     runs-on: ${{ inputs.runner }}
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:fa95dacafd53199ab68e3c28c488c0cc0d5fad3a4b0ac20af27f2bd0a061a55d # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
@@ -156,13 +156,13 @@ jobs:
           path: ml_actions
           persist-credentials: false
 
-      - name: Run Security Suite
+      - name: Run security suite
         working-directory: ml_actions
         shell: bash
         env:
           REGISTRY_FILE: ${{ inputs.registry_file }}
         run: |
-          echo "::group::Run Security Suite"
+          echo "::group::Run security suite"
           set -euo pipefail
 
           # Validate registry file
@@ -442,29 +442,6 @@ jobs:
           custom_metadata: ${{ inputs.custom_metadata }}
           results_dir: "${{ github.workspace }}/results"
 
-      - name: Run static threshold analyzer
-        # For A/B mode, skip static analysis. The ab_analysis job will handle pass/fail logic.
-        if: ${{ ! inputs.ab_mode }}
-        env:
-          METRIC_SPECS_JSON: '${{ toJson(matrix.metrics) }}'
-          BENCHMARK_RESULT_FILE: ${{ steps.baseline.outputs.benchmark_result_file }}
-        id: static_threshold_analyzer
-        shell: bash
-        working-directory: ml_actions
-        run: |
-          echo "::group::Run static threshold analyzer"
-          set -euo pipefail
-
-          bazel run //static_threshold_analyzer \
-            --noshow_progress \
-            --noshow_loading_progress \
-            --ui_event_filters=-info \
-            -- \
-            --metric_specs_json="$METRIC_SPECS_JSON" \
-            --benchmark_result_file="$BENCHMARK_RESULT_FILE"
-
-          echo "::endgroup::"
-
       - name: Publish results to Pub/Sub
         if: ${{ success() && inputs.publish_metrics && !inputs.ab_mode }}
         env:
@@ -503,13 +480,13 @@ jobs:
           custom_metadata: ${{ inputs.custom_metadata }}
           results_dir: "${{ github.workspace }}/results_experiment"
 
-  ab_analysis:
-    name: A/B analysis
+  analyze_results:
+    name: Analyze results
     needs: [generate_matrix, run_benchmarks]
     runs-on: ${{ inputs.runner }}
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
-    if: ${{ inputs.ab_mode == true && !cancelled() }}
+    if: always() && !cancelled()
     steps:
       - name: Check out ML actions repo
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
@@ -526,76 +503,91 @@ jobs:
           pattern: shard-benchmark-result-*-${{ needs.generate_matrix.outputs.job_id }}
           path: all_results
 
-      - name: Run A/B analyzer
-        id: ab_analyzer
+      - name: Run analyzer
+        id: run_analyzer
         env:
+          AB_MODE: ${{ inputs.ab_mode }}
           MATRIX_JSON_STR: ${{ needs.generate_matrix.outputs.matrix }}
           REPO_URL: "${{ github.server_url }}/${{ github.repository }}"
           WORKFLOW_NAME: ${{ github.workflow }}
         shell: bash
         working-directory: ml_actions
         run: |
-          echo "::group::Run A/B analyzer"
+          echo "::group::Run analyzer"
           set -euo pipefail
 
           RESULTS_DIR="$GITHUB_WORKSPACE/all_results"
-          REPORT_FILE="$GITHUB_WORKSPACE/ab_report.md"
+          REPORT_FILE="$GITHUB_WORKSPACE/benchmark_report.md"
 
-          # Catch non-zero exit code to allow the workflow to proceed to the PR comment step.
-          bazel run //ab_analyzer \
-            --noshow_progress \
-            --noshow_loading_progress \
-            --ui_event_filters=-info \
-            -- \
-            --results_dir="$RESULTS_DIR" \
-            --matrix_json="$MATRIX_JSON_STR" \
-            --output_file="$REPORT_FILE" \
-            --repo_url="$REPO_URL" \
-            --workflow_name="$WORKFLOW_NAME" || echo "status=FAILURE" >> "$GITHUB_OUTPUT"
+          if [[ "$AB_MODE" == "true" ]]; then
+            bazel run //ab_analyzer \
+              --noshow_progress \
+              --noshow_loading_progress \
+              --ui_event_filters=-info \
+              -- \
+              --results_dir="$RESULTS_DIR" \
+              --matrix_json="$MATRIX_JSON_STR" \
+              --output_file="$REPORT_FILE" \
+              --repo_url="$REPO_URL" \
+              --workflow_name="$WORKFLOW_NAME" || echo "status=FAILURE" >> "$GITHUB_OUTPUT"
+          else
+            bazel run //static_threshold_analyzer \
+              --noshow_progress \
+              --noshow_loading_progress \
+              --ui_event_filters=-info \
+              -- \
+              --results_dir="$RESULTS_DIR" \
+              --matrix_json="$MATRIX_JSON_STR" \
+              --output_file="$REPORT_FILE" \
+              --workflow_name="$WORKFLOW_NAME" || echo "status=FAILURE" >> "$GITHUB_OUTPUT"
+          fi
 
-          # Set A/B report as job summary
+          # Set report as job summary
           if [[ -f "$REPORT_FILE" ]]; then
             cat "$REPORT_FILE" >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "_No A/B report generated due to analysis failure._" >> "$GITHUB_STEP_SUMMARY"
+            echo "_No report generated due to analysis failure._" >> "$GITHUB_STEP_SUMMARY"
           fi
 
           echo "::endgroup::"
 
-      - name: Upload A/B report
+      - name: Upload benchmark report
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
         with:
           name: shard-ab-report-${{ needs.generate_matrix.outputs.job_id }}
-          path: ${{ github.workspace }}/ab_report.md
+          path: ${{ github.workspace }}/benchmark_report.md
           retention-days: 1
 
       - name: Post PR comment
         if: ${{ inputs.post_pr_comment == true && github.event_name == 'pull_request' && !cancelled() }}
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9.0.0 # zizmor: ignore[unpinned-uses]
+        env:
+          COMMENT_MARKER: ${{ inputs.job_id || github.workflow }}
+          REPORT_FILE: ${{ github.workspace }}/benchmark_report.md
         with:
           script: |
             const scriptPath = require('path').resolve('./ml_actions/post_pr_comment/post_pr_comment.js');
             const postComment = require(scriptPath);
-            await postComment({ github, context });
+            await postComment({ github, context, reportPath: process.env.REPORT_FILE, commentMarker: process.env.COMMENT_MARKER });
 
       - name: Assert final status
         shell: bash
         env:
-          AB_STATUS: ${{ steps.ab_analyzer.outputs.status }}
+          STATUS: ${{ steps.run_analyzer.outputs.status }}
         run: |
           echo "::group::Assert final status"
           set -euo pipefail
 
-          if [[ "$AB_STATUS" == "FAILURE" ]]; then
-            echo "[FAILURE] A/B Analyzer detected regressions or missing experiments."
+          if [[ "$STATUS" == "FAILURE" ]]; then
+            echo "[FAILURE] Analyzer detected regressions or missing experiments."
             exit 1
           fi
 
           echo "::endgroup::"
 
   bundle_artifacts:
-    name: bundle_artifacts
-    needs: [generate_matrix, run_benchmarks, ab_analysis]
+    name: Bundle artifacts
+    needs: [generate_matrix, run_benchmarks, analyze_results]
     runs-on: ${{ inputs.runner }}
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest

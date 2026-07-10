@@ -30,7 +30,7 @@ Our platform handles the following:
 - Static threshold analysis and regression detection.
 - A/B testing and regression detection.
 - Publishing results to Google Cloud Pub/Sub for downstream consumption.
-- Bundling all benchmark results, A/B report, and workload artifacts into a single GitHub Actions artifact per top-level job.
+- Bundling all benchmark results, benchmark report, and workload artifacts into a single GitHub Actions artifact per top-level job.
 
 ## Create a workflow file
 
@@ -46,7 +46,7 @@ on:
 
 permissions:
   contents: read
-  pull-requests: write # Required for A/B testing PR comments
+  pull-requests: write # Required for posting benchmark PR comments
 
 jobs:
   run_benchmarks:
@@ -76,7 +76,7 @@ The reusable workflow supports the following inputs:
 | `ab_mode` | No | `false` | If `true`, runs A/B comparison (baseline vs experiment) and generates an A/B report. |
 | `experiment_ref` | No | Current SHA | Git ref for the experiment in A/B mode. Defaults to the current commit SHA. |
 | `baseline_ref` | No | PR Base or main | Git ref for the baseline in A/B mode. Defaults to PR base or main. |
-| `post_pr_comment` | No | `true` | If `true` and `ab_mode` is enabled, posts the A/B report as a sticky comment on the PR. |
+| `post_pr_comment` | No | `false` | If `true`, posts the benchmark report as a sticky comment on the PR. |
 | `publish_metrics` | No | `false` | If `true`, publishes benchmark results to Google Cloud Pub/Sub. |
 | `pub_sub_gcp_project_id` | No | `ml-oss-benchmarking-production` | GCP project ID for Pub/Sub. |
 | `pub_sub_gcp_topic_id` | No | `public-results-prod` | Pub/Sub topic ID to publish results to. |
@@ -446,9 +446,31 @@ if metadata_dir:
     json.dump(metadata, f)
 ```
 
+## Automated Analysis & Reporting
+
+Every benchmark workflow run automatically executes a centralized analysis job (`analyze_results`) after all workloads complete:
+
+1. **Static Threshold Analysis (`ab_mode: false`)**: Evaluates each metric's computed statistic against the static `baseline` and `threshold` tolerances defined in your registry (`.pbtxt`).
+2. **A/B Comparison (`ab_mode: true`)**: Evaluates delta percentages between live experiment and baseline runs against your `threshold` tolerances.
+
+In both modes, the platform generates a unified Markdown report (`benchmark_report.md`) with a structured comparison table (`Metric`, `Current/Experiment`, `Baseline`, `Threshold`, and `Status`).
+
+### GitHub Actions Step Summary
+
+The generated report table is automatically published to the GitHub Actions Job Summary (`GITHUB_STEP_SUMMARY`), providing immediate visibility into benchmark performance directly in the workflow run UI.
+
+### Sticky PR Comments
+
+If you set `post_pr_comment: true` when calling the workflow on pull requests, BAP posts or updates a "sticky" comment on the PR summarizing your benchmark results:
+
+- **Universal Support**: Works for both standard static threshold analysis (`ab_mode: false`) and A/B comparison (`ab_mode: true`).
+- **Sticky Behavior**: Automatically updates the existing comment on subsequent pushes to keep PR discussions clean.
+- **Run History**: Maintains a collapsible audit log of previous workflow runs inside the comment so you can track performance changes across iterations.
+- **Multiple Jobs in One Workflow**: If your workflow calls `run-benchmarks.yaml` multiple times and enables `post_pr_comment: true`, you must explicitly specify a unique `job_id` for each call (`with: job_id: "my_job"`). Otherwise, calls without `job_id` share the default workflow marker and will overwrite each other's comments.
+
 ## A/B Testing Configuration
 
-BAP supports native A/B testing, allowing you to detect performance regressions on pull requests before they are merged.
+BAP supports native A/B testing, allowing you to detect performance regressions on pull requests by dynamically comparing your PR branch against a base reference before merging.
 
 ### How it works
 
@@ -456,16 +478,7 @@ When `ab_mode: true` is set, the workflow automatically orchestrates the followi
 
 1.  **Baseline Run**: Checks out the base ref (e.g., `main`) and runs the benchmarks.
 2.  **Experiment Run**: Checks out your experiment ref (e.g. PR branch) and runs the same benchmarks.
-3.  **Analysis**: Compares the metrics between the two runs.
-4.  **Report**: Generates a markdown report and posts it as a "sticky" comment on your PR.
-
-### PR Comment
-
-The workflow posts a comment to the PR summarizing the results.
-
-- **Sticky Behavior**: The comment is updated on subsequent pushes to keep the conversation clean.
-- **Run History**: The comment maintains a collapsible history log of previous runs for the PR, allowing you to audit performance over time as you iterate on the code.
-- **Status**: The status (PASS/REGRESSION) is determined by the `threshold` and `improvement_direction` defined in your registry.
+3.  **Analysis & Report**: Dynamically computes metric deltas between experiment and baseline runs, formatting the comparison into `benchmark_report.md` for summary display and optional PR commenting.
 
 ### Enabling A/B Testing
 
@@ -528,12 +541,12 @@ Note: The individual intermediate artifacts generated during the matrix run are 
 
 ### Directory Structure
 
-When downloaded and extracted, the bundle provides a clean, navigable directory tree containing the original matrix definition, the generated A/B report (if applicable), and all benchmark results and custom workload artifacts organized by environment:
+When downloaded and extracted, the bundle provides a clean, navigable directory tree containing the original matrix definition, the generated report (if applicable), and all benchmark results and custom workload artifacts organized by environment:
 
 ```text
 artifacts-<job_id>/
 ├── matrix.json
-├── ab_report.md
+├── benchmark_report.md
 └── <benchmark_name>/
     └── <environment_config_id>/
         ├── single_run/ # (or BASELINE / EXPERIMENT if ab_mode: true)

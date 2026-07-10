@@ -15,12 +15,14 @@
 """Tests for the static threshold analyzer library."""
 
 import sys
-from typing import List
-from unittest import mock
+from unittest.mock import patch
 import pytest
+from google.protobuf import json_format
 from google.protobuf import timestamp_pb2
+from bap_proto import benchmark_job_pb2
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
+from static_threshold_analyzer import static_threshold_analyzer
 from static_threshold_analyzer.static_threshold_analyzer_lib import (
   StaticAnalyzer,
 )
@@ -29,8 +31,8 @@ from static_threshold_analyzer.static_threshold_analyzer_lib import (
 
 
 def _create_metric_specs(
-  stats: List[metric_pb2.StatSpec],
-) -> List[metric_pb2.MetricSpec]:
+  stats: list[metric_pb2.StatSpec],
+) -> list[metric_pb2.MetricSpec]:
   """Helper to build a simple MetricSpecs list."""
   return [
     metric_pb2.MetricSpec(
@@ -42,7 +44,7 @@ def _create_metric_specs(
 
 
 def _create_benchmark_result(
-  computed_stats: List[benchmark_result_pb2.ComputedStat],
+  computed_stats: list[benchmark_result_pb2.ComputedStat],
 ) -> benchmark_result_pb2.BenchmarkResult:
   """Helper to build a simple BenchmarkResult."""
   ts = timestamp_pb2.Timestamp()
@@ -228,19 +230,38 @@ def test_run_analysis_regex_pattern():
 # --- Tests for Reporting Logic ---
 
 
-def test_report_results_success(capsys):
-  """Tests that a successful run prints the PASSED message to stdout."""
-  analyzer = StaticAnalyzer(metric_specs=[])
-  analyzer.run_analysis(_create_benchmark_result([]))
-  analyzer.report_results()
+def test_generate_report_section_success():
+  """Tests that a successful run returns formatted markdown and success=True."""
+  metric_specs = _create_metric_specs(
+    stats=[
+      metric_pb2.StatSpec(
+        stat=metric_pb2.Stat.MEAN,
+        comparison=metric_pb2.ComparisonSpec(
+          baseline={"value": 100.0},
+          threshold={"value": 0.1},
+          improvement_direction=metric_pb2.ImprovementDirection.LESS,
+        ),
+      )
+    ]
+  )
+  result = _create_benchmark_result(
+    computed_stats=[_create_computed_stat("wall_time", metric_pb2.Stat.MEAN, 105.0)]
+  )
 
-  captured = capsys.readouterr()
-  assert "PASSED" in captured.out
-  assert "FAILED" not in captured.err
+  analyzer = StaticAnalyzer(metric_specs)
+  analyzer.run_analysis(result)
+  report_md, success = analyzer.generate_report_section("test_config")
+
+  assert success
+  assert "### test_config" in report_md
+  assert (
+    "| wall_time <small>(MEAN)</small> | 105.0000 | 100.0000 | 10% | 🟢 PASS |"
+    in report_md
+  )
 
 
-def test_report_results_failure(capsys):
-  """Tests that a failed run prints error messages and exits with code 1."""
+def test_generate_report_section_failure():
+  """Tests that a regressed run returns formatted markdown and success=False."""
   metric_specs = _create_metric_specs(
     stats=[
       metric_pb2.StatSpec(
@@ -259,14 +280,66 @@ def test_report_results_failure(capsys):
 
   analyzer = StaticAnalyzer(metric_specs)
   analyzer.run_analysis(result)
+  report_md, success = analyzer.generate_report_section("test_config")
 
-  # Mock sys.exit to prevent the test runner from stopping.
-  with mock.patch("sys.exit") as mock_exit:
-    analyzer.report_results()
+  assert not success
+  assert "### test_config" in report_md
+  assert (
+    "| wall_time <small>(MEAN)</small> | 150.0000 | 100.0000 | 10% | 🔴 REGRESSION |"
+    in report_md
+  )
 
-  mock_exit.assert_called_with(1)
-  captured = capsys.readouterr()
-  assert "Regressed to 150.00ms (Baseline: 100.00ms ±10.00%)" in captured.err
+
+def test_main_empty_matrix_json(tmp_path):
+  """Tests that passing an empty string for matrix_json raises ValueError."""
+  output_file = tmp_path / "report.md"
+  with patch.object(
+    sys,
+    "argv",
+    [
+      "prog",
+      "--matrix_json",
+      "",
+      "--results_dir",
+      str(tmp_path),
+      "--output_file",
+      str(output_file),
+      "--workflow_name",
+      "TestFlow",
+    ],
+  ):
+    with pytest.raises(ValueError, match="matrix_json argument cannot be empty."):
+      static_threshold_analyzer.main()
+
+
+def test_main_missing_result_fails(tmp_path):
+  """Tests that a config in matrix_json missing from results_dir causes global FAIL."""
+  job = benchmark_job_pb2.BenchmarkJob(config_id="missing_job")
+  matrix_json = f"[{json_format.MessageToJson(job)}]"
+  output_file = tmp_path / "report.md"
+
+  with patch.object(
+    sys,
+    "argv",
+    [
+      "prog",
+      "--matrix_json",
+      matrix_json,
+      "--results_dir",
+      str(tmp_path),
+      "--output_file",
+      str(output_file),
+      "--workflow_name",
+      "TestFlow",
+    ],
+  ):
+    with pytest.raises(SystemExit) as exc_info:
+      static_threshold_analyzer.main()
+    assert exc_info.value.code == 1
+    report = output_file.read_text()
+    assert "### missing_job" in report
+    assert "No benchmark results found" in report
+    assert "**Global Status:** 🔴 FAIL" in report
 
 
 if __name__ == "__main__":

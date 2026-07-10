@@ -245,16 +245,16 @@ def generate_report(
       if base_val is None:
         delta_str = "N/A"
         base_str = "-"
-        status = "NEW"
+        status = "🔵 NEW"
 
       elif base_val == 0:
         base_str = "0"
         if exp_val == 0:
           delta_str = "0.00%"
-          status = "PASS"
+          status = "🟢 PASS"
         else:
           delta_str = "∞"
-          status = "UNDETERMINED"
+          status = "🟡 UNDETERMINED"
 
       else:
         delta = (exp_val - base_val) / base_val
@@ -270,16 +270,16 @@ def generate_report(
             is_regression = True
 
         if is_regression:
-          status = "REGRESSION"
+          status = "🔴 REGRESSION"
           global_success = False
         else:
-          status = "PASS"
+          status = "🟢 PASS"
 
       lines.append(
         f"| {display_name} | {base_str} | {exp_val:.4f} | {delta_str} | {threshold:.0%} | {status} |"
       )
 
-  status_msg = "PASS" if global_success else "FAIL"
+  status_msg = "🟢 PASS" if global_success else "🔴 FAIL"
   lines.append(f"\n**Global Status:** {status_msg}")
 
   return "\n".join(lines), global_success

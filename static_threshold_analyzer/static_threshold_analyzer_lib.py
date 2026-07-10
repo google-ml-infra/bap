@@ -16,14 +16,15 @@
 Library for performing static threshold analysis on a benchmark result.
 """
 
-import sys
+from collections.abc import Sequence
 import re
-from typing import Dict, List, Union, TypedDict
+import sys
+from typing import TypedDict
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
 
-ResultMap = Dict[tuple[str, str], benchmark_result_pb2.ComputedStat]
-MetricSpecs = List[metric_pb2.MetricSpec]
+ResultMap = dict[tuple[str, str], benchmark_result_pb2.ComputedStat]
+MetricSpecs = Sequence[metric_pb2.MetricSpec]
 
 
 class Regression(TypedDict):
@@ -32,10 +33,23 @@ class Regression(TypedDict):
   config_id: str
   metric: str
   stat: str
-  current: Union[int, float]
-  baseline: Union[int, float]
+  current: int | float
+  baseline: int | float
   threshold: float
   unit: str
+
+
+class Evaluation(TypedDict):
+  """Defines the structure for an evaluated metric comparison check."""
+
+  config_id: str
+  metric: str
+  stat: str
+  current: float
+  baseline: float
+  threshold: float
+  unit: str
+  is_regression: bool
 
 
 def _is_regression(
@@ -64,7 +78,8 @@ class StaticAnalyzer:
   def __init__(self, metric_specs: MetricSpecs):
     """Initializes the analyzer with the metric specifications."""
     self.metric_specs = metric_specs
-    self.regressions: List[Regression] = []
+    self.regressions: list[Regression] = []
+    self.evaluations: list[Evaluation] = []
 
   def run_analysis(self, benchmark_result: benchmark_result_pb2.BenchmarkResult):
     """Run the threshold comparison."""
@@ -112,7 +127,8 @@ class StaticAnalyzer:
             threshold = comparison.threshold.value
             direction = comparison.improvement_direction
 
-            if _is_regression(current_value, baseline, threshold, direction):
+            is_reg = _is_regression(current_value, baseline, threshold, direction)
+            if is_reg:
               self.regressions.append({
                 "config_id": benchmark_result.config_id,
                 "metric": concrete_metric,
@@ -123,23 +139,33 @@ class StaticAnalyzer:
                 "unit": unit,
               })
 
-  def report_results(self):
-    """Reports results to stdout/stderr and terminates with failure if regressions were found."""
-    if self.regressions:
-      print(
-        "Static threshold check FAILED. Performance regressions detected.",
-        file=sys.stderr,
+            self.evaluations.append({
+              "config_id": benchmark_result.config_id,
+              "metric": concrete_metric,
+              "stat": stat_name,
+              "current": current_value,
+              "baseline": baseline,
+              "threshold": threshold,
+              "unit": unit,
+              "is_regression": is_reg,
+            })
+
+  def generate_report_section(self, config_id: str) -> tuple[str, bool]:
+    """Generates a Markdown report section table for the given config_id.
+
+    Returns:
+        A tuple of (markdown_string, success), where success is True if there
+        are no regressions and False otherwise.
+    """
+    lines: list[str] = [f"### {config_id}"]
+    lines.append("| Metric | Current | Baseline | Threshold | Status |")
+    lines.append("| :--- | :--- | :--- | :--- | :--- |")
+
+    for item in self.evaluations:
+      display_name = f"{item['metric']} <small>({item['stat']})</small>"
+      status = "🔴 REGRESSION" if item["is_regression"] else "🟢 PASS"
+      lines.append(
+        f"| {display_name} | {item['current']:.4f} | {item['baseline']:.4f} | {item['threshold']:.0%} | {status} |"
       )
-      for r in self.regressions:
-        msg = (
-          f"[{r['config_id']}] {r['metric']} ({r['stat']}): "
-          f"Regressed to {r['current']:.2f}{r['unit']} "
-          f"(Baseline: {r['baseline']:.2f}{r['unit']} ±{r['threshold']:.2f}%)."
-        )
-        print(f"{msg}", file=sys.stderr)
-      sys.exit(1)
-    else:
-      print(
-        "Static threshold check PASSED. No performance regressions detected.",
-        file=sys.stdout,
-      )
+
+    return "\n".join(lines), not self.regressions
