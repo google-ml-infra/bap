@@ -120,18 +120,18 @@ on:
         value: ${{ jobs.generate_matrix.outputs.job_id }}
 
 permissions:
-  contents: read  # Required for actions/checkout.
-  pull-requests: write  # Required for posting PR comments.
+  contents: read # Required for actions/checkout.
+  pull-requests: write # Required for posting PR comments.
 
 jobs:
   validate_registry:
     name: Validate Registry Security
     runs-on: ${{ inputs.runner }}
     container:
-      image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:fa95dacafd53199ab68e3c28c488c0cc0d5fad3a4b0ac20af27f2bd0a061a55d  # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
+      image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:fa95dacafd53199ab68e3c28c488c0cc0d5fad3a4b0ac20af27f2bd0a061a55d # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     steps:
       - name: Check out user repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -149,7 +149,7 @@ jobs:
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
       - name: Check out BAP repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ steps.resolve_refs.outputs.bap_ref }}
@@ -182,7 +182,7 @@ jobs:
       job_id: ${{ steps.gen_job_id.outputs.job_id }}
     steps:
       - name: Check out user repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -257,7 +257,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ steps.resolve_refs.outputs.bap_ref }}
@@ -315,7 +315,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload matrix JSON artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
         with:
           name: shard-matrix-${{ steps.gen_job_id.outputs.job_id }}
           path: ${{ steps.generate.outputs.matrix_json_path }}
@@ -325,7 +325,7 @@ jobs:
     # For A/B mode, append mode to the job name.
     name: Run benchmark (${{ matrix.config_id }}${{ matrix.ab_test_group && format(' - {0}', matrix.ab_test_group) || '' }})
     needs: generate_matrix
-    if: needs.generate_matrix.outputs.matrix != '[]'
+    if: ${{ needs.generate_matrix.outputs.matrix != '[]' }}
 
     # For A/B mode, conditionally soft fail:
     # If this is a baseline job, continue even if it fails,
@@ -342,31 +342,8 @@ jobs:
       image: ${{ matrix.environment_config.container_image }}
 
     steps:
-      - name: Check out user repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
-        with:
-          repository: ${{ github.repository }}
-          # For A/B mode, use the checkout ref. Otherwise fall back to SHA.
-          ref: ${{ matrix.checkout_ref || github.sha }}
-          path: user_repo
-          persist-credentials: false
-
-      - name: Get workload commit info
-        id: commit_info
-        shell: bash
-        working-directory: user_repo
-        env:
-          # For A/B mode, use the checkout ref. Otherwise fall back to standard ref.
-          RESOLVED_REF: ${{ matrix.checkout_ref || github.ref_name }}
-        run: |
-          echo "::group::Get workload commit info"
-          set -euo pipefail
-          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-          echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
-          echo "::endgroup::"
-
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
@@ -452,88 +429,25 @@ jobs:
 
           echo "::endgroup::"
 
-      - name: Execute workload
-        uses: ./ml_actions/actions/dynamic_action_executor
+      - name: Execute workload (baseline)
+        id: baseline
+        uses: ./ml_actions/actions/execute_benchmark
         with:
-          action: ${{ matrix.workload.action }}
-          action_inputs: ${{ matrix.workload.action_inputs && toJson(matrix.workload.action_inputs) || '{}' }}
-
-      - name: Upload workload artifacts
-        if: always() # Uploads even if the workload fails
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
-        with:
-          # Format: shard-workload-artifacts-{CONFIG}[-{AB_MODE}]-{JOB_ID}.json
-          name: shard-workload-artifacts-${{ matrix.config_id }}${{ matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '' }}-${{ needs.generate_matrix.outputs.job_id }}
-          path: ${{ env.WORKLOAD_ARTIFACTS_DIR }}
-          retention-days: 1
-          if-no-files-found: ignore
-
-      - name: Parse TB event files
-        env:
-          BENCHMARK_CONFIG_ID: ${{ matrix.config_id }}
-          BENCHMARK_NAME: ${{ matrix.benchmark_name }}
-          ENVIRONMENT_CONFIG_ID: ${{ matrix.environment_config.id }}
-          METRIC_SPECS_JSON: '${{ toJson(matrix.metrics) }}'
-          STATIC_METADATA_JSON: '${{ toJson(matrix.metadata) }}'
-          CUSTOM_METADATA_JSON: '${{ inputs.custom_metadata }}'
-          WORKFLOW_TYPE: ${{ matrix.workflow_type }}
-          RUNNER_LABEL: ${{ matrix.environment_config.runner_label }}
-          RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
-          BRANCH: ${{ steps.commit_info.outputs.ref }}
-          BENCHMARK_RESULTS_DIR: "${{ github.workspace }}/results"
-          WORKLOAD_METADATA_DIR: "${{ env.WORKLOAD_METADATA_DIR }}"
-        id: parse_tb_logs
-        working-directory: ml_actions
-        shell: bash
-        run: |
-          echo "::group::Parse TB event files"
-          set -euo pipefail
-          mkdir -p "$BENCHMARK_RESULTS_DIR"
-          BENCHMARK_RESULT_FILE="$BENCHMARK_RESULTS_DIR/benchmark_result.json"
-
-          bazel run //tb_parser \
-            --noshow_progress \
-            --noshow_loading_progress \
-            --ui_event_filters=-info \
-            -- \
-            --metric_specs_json="$METRIC_SPECS_JSON" \
-            --tblog_dir="$TENSORBOARD_OUTPUT_DIR" \
-            --output_file="$BENCHMARK_RESULT_FILE" \
-            --config_id="$BENCHMARK_CONFIG_ID" \
-            --benchmark_name="$BENCHMARK_NAME" \
-            --environment_config_id="$ENVIRONMENT_CONFIG_ID" \
-            --commit_sha="$COMMIT_SHA" \
-            --github_run_id="$GITHUB_RUN_ID" \
-            --workflow_type="$WORKFLOW_TYPE" \
-            --runner_label="$RUNNER_LABEL" \
-            --branch="$BRANCH" \
-            --run_url="$RUN_URL" \
-            --static_metadata_json="$STATIC_METADATA_JSON" \
-            --custom_metadata_json="$CUSTOM_METADATA_JSON" \
-            --workload_metadata_dir="$WORKLOAD_METADATA_DIR"
-
-          {
-            echo "benchmark_results_dir=$BENCHMARK_RESULTS_DIR"
-            echo "benchmark_result_file=$BENCHMARK_RESULT_FILE"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "::endgroup::"
-
-      - name: Upload benchmark result
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
-        with:
-          # Format: shard-benchmark-result-{CONFIG}[-{AB_MODE}]-{JOB_ID}
-          name: shard-benchmark-result-${{ matrix.config_id }}${{ matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '' }}-${{ needs.generate_matrix.outputs.job_id }}
-          path: ${{ steps.parse_tb_logs.outputs.benchmark_result_file }}
-          retention-days: 1
+          # For A/B Colocated mode, use baseline_ref. For standard A/B, use checkout_ref. Otherwise fall back to SHA.
+          checkout_ref: ${{ matrix.baseline_ref || matrix.checkout_ref || github.sha }}
+          # In A/B Colocated mode, this first run is the BASELINE.
+          artifact_suffix: ${{ matrix.ab_test_group == 'COLOCATED' && '-BASELINE' || (matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '') }}
+          matrix: ${{ toJson(matrix) }}
+          job_id: ${{ needs.generate_matrix.outputs.job_id }}
+          custom_metadata: ${{ inputs.custom_metadata }}
+          results_dir: "${{ github.workspace }}/results"
 
       - name: Run static threshold analyzer
         # For A/B mode, skip static analysis. The ab_analysis job will handle pass/fail logic.
         if: ${{ ! inputs.ab_mode }}
         env:
           METRIC_SPECS_JSON: '${{ toJson(matrix.metrics) }}'
-          BENCHMARK_RESULT_FILE: ${{ steps.parse_tb_logs.outputs.benchmark_result_file }}
+          BENCHMARK_RESULT_FILE: ${{ steps.baseline.outputs.benchmark_result_file }}
         id: static_threshold_analyzer
         shell: bash
         working-directory: ml_actions
@@ -552,11 +466,12 @@ jobs:
           echo "::endgroup::"
 
       - name: Publish results to Pub/Sub
-        if: success() && inputs.publish_metrics
+        if: ${{ success() && inputs.publish_metrics }}
         env:
           PROJECT_ID: ${{ inputs.pub_sub_gcp_project_id }}
           TOPIC_ID: ${{ inputs.pub_sub_gcp_topic_id }}
-          BENCHMARK_RESULTS_DIR: ${{ steps.parse_tb_logs.outputs.benchmark_results_dir }}
+          # Path determined by results_dir input in baseline call
+          BENCHMARK_RESULTS_DIR: "${{ github.workspace }}/results"
           USER_REPO: ${{ github.repository }}
         shell: bash
         working-directory: ml_actions
@@ -576,16 +491,28 @@ jobs:
 
           echo "::endgroup::"
 
+      - name: Execute workload (experiment)
+        id: experiment
+        if: ${{ always() && matrix.ab_test_group == 'COLOCATED' }}
+        uses: ./ml_actions/actions/execute_benchmark
+        with:
+          checkout_ref: ${{ matrix.experiment_ref }}
+          artifact_suffix: "-EXPERIMENT"
+          matrix: ${{ toJson(matrix) }}
+          job_id: ${{ needs.generate_matrix.outputs.job_id }}
+          custom_metadata: ${{ inputs.custom_metadata }}
+          results_dir: "${{ github.workspace }}/results_experiment"
+
   ab_analysis:
     name: A/B analysis
     needs: [generate_matrix, run_benchmarks]
     runs-on: ${{ inputs.runner }}
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
-    if: inputs.ab_mode == true && !cancelled()
+    if: ${{ inputs.ab_mode == true && !cancelled() }}
     steps:
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
@@ -593,7 +520,7 @@ jobs:
           persist-credentials: false
 
       - name: Download benchmark results
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8.0.1 # zizmor: ignore[unpinned-uses]
         with:
           # Only download artifacts created in this specific job
           pattern: shard-benchmark-result-*-${{ needs.generate_matrix.outputs.job_id }}
@@ -636,15 +563,15 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload A/B report
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
         with:
           name: shard-ab-report-${{ needs.generate_matrix.outputs.job_id }}
           path: ${{ github.workspace }}/ab_report.md
           retention-days: 1
 
       - name: Post PR comment
-        if: inputs.post_pr_comment == true && github.event_name == 'pull_request' && !cancelled()
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9
+        if: ${{ inputs.post_pr_comment == true && github.event_name == 'pull_request' && !cancelled() }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9.0.0 # zizmor: ignore[unpinned-uses]
         with:
           script: |
             const scriptPath = require('path').resolve('./ml_actions/post_pr_comment/post_pr_comment.js');
@@ -672,11 +599,11 @@ jobs:
     runs-on: ${{ inputs.runner }}
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
-    if: always()
+    if: ${{ always() }}
 
     steps:
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
@@ -684,7 +611,7 @@ jobs:
           persist-credentials: false
 
       - name: Download all job artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # ratchet:actions/download-artifact@v8.0.1 # zizmor: ignore[unpinned-uses]
         with:
           pattern: shard-*-${{ needs.generate_matrix.outputs.job_id }}
           path: raw_artifacts
@@ -714,13 +641,13 @@ jobs:
           echo "::endgroup::"
 
       - name: Upload bundled artifacts
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
         with:
           name: artifacts-${{ needs.generate_matrix.outputs.job_id }}
           path: final_artifacts/
 
       - name: Delete temporary artifacts
-        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # ratchet:geekyeggo/delete-artifact@v6
+        uses: geekyeggo/delete-artifact@176a747ab7e287e3ff4787bf8a148716375ca118 # ratchet:geekyeggo/delete-artifact@v6.0.0 # zizmor: ignore[unpinned-uses]
         with:
           name: shard-*-${{ needs.generate_matrix.outputs.job_id }}
           useGlob: true

@@ -1,0 +1,151 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: Execute Benchmark
+description: "Checks out code, executes the workload, and parses/uploads results."
+
+inputs:
+  checkout_ref:
+    description: "The git ref (SHA, branch, tag) to checkout."
+    required: true
+  artifact_suffix:
+    description: "Optional suffix for artifact names (e.g. -BASELINE)."
+    required: false
+    default: ""
+  matrix:
+    description: "The JSON-encoded benchmark job configuration from the matrix."
+    required: true
+  job_id:
+    description: "The unique job ID for namespacing artifacts."
+    required: true
+  custom_metadata:
+    description: "Optional custom metadata JSON string."
+    required: false
+    default: "{}"
+  results_dir:
+    description: "The absolute path to the directory to store parsed benchmark results."
+    required: false
+    default: "${{ github.workspace }}/results"
+
+outputs:
+  benchmark_result_file:
+    description: "Path to the generated benchmark_result.json file."
+    value: ${{ steps.parse_tb_logs.outputs.benchmark_result_file }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Check out user repo
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+      with:
+        repository: ${{ github.repository }}
+        ref: ${{ inputs.checkout_ref }}
+        path: user_repo
+        persist-credentials: false
+
+    - name: Get workload commit info
+      id: commit_info
+      shell: bash
+      working-directory: user_repo
+      env:
+        RESOLVED_REF: ${{ inputs.checkout_ref }}
+      run: |
+        echo "::group::Get workload commit info"
+        set -euo pipefail
+        echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+        echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
+
+    - name: Execute workload
+      uses: ./ml_actions/actions/dynamic_action_executor
+      with:
+        action: ${{ fromJson(inputs.matrix).workload.action }}
+        action_inputs: ${{ fromJson(inputs.matrix).workload.action_inputs && toJson(fromJson(inputs.matrix).workload.action_inputs) || '{}' }}
+
+    - name: Upload workload artifacts
+      if: ${{ always() }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
+      with:
+        # Format: shard-workload-artifacts-{CONFIG}[-{SUFFIX}]-{JOB_ID}.json
+        name: shard-workload-artifacts-${{ fromJson(inputs.matrix).config_id }}${{ inputs.artifact_suffix }}-${{ inputs.job_id }}
+        path: ${{ env.WORKLOAD_ARTIFACTS_DIR }}
+        retention-days: 1
+        if-no-files-found: ignore
+
+    - name: Parse TB event files
+      id: parse_tb_logs
+      working-directory: ml_actions
+      shell: bash
+      env:
+        BENCHMARK_CONFIG_ID: ${{ fromJson(inputs.matrix).config_id }}
+        BENCHMARK_NAME: ${{ fromJson(inputs.matrix).benchmark_name }}
+        ENVIRONMENT_CONFIG_ID: ${{ fromJson(inputs.matrix).environment_config.id }}
+        METRIC_SPECS_JSON: '${{ toJson(fromJson(inputs.matrix).metrics) }}'
+        STATIC_METADATA_JSON: '${{ toJson(fromJson(inputs.matrix).metadata) }}'
+        CUSTOM_METADATA_JSON: '${{ inputs.custom_metadata }}'
+        WORKFLOW_TYPE: ${{ fromJson(inputs.matrix).workflow_type }}
+        RUNNER_LABEL: ${{ fromJson(inputs.matrix).environment_config.runner_label }}
+        RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+        COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
+        BRANCH: ${{ steps.commit_info.outputs.ref }}
+        BENCHMARK_RESULTS_DIR: "${{ inputs.results_dir }}"
+        WORKLOAD_METADATA_DIR: "${{ env.WORKLOAD_METADATA_DIR }}"
+      run: |
+        echo "::group::Parse TB event files"
+        set -euo pipefail
+        mkdir -p "$BENCHMARK_RESULTS_DIR"
+        BENCHMARK_RESULT_FILE="$BENCHMARK_RESULTS_DIR/benchmark_result.json"
+
+        bazel run //tb_parser \
+          --noshow_progress \
+          --noshow_loading_progress \
+          --ui_event_filters=-info \
+          -- \
+          --metric_specs_json="$METRIC_SPECS_JSON" \
+          --tblog_dir="$TENSORBOARD_OUTPUT_DIR" \
+          --output_file="$BENCHMARK_RESULT_FILE" \
+          --config_id="$BENCHMARK_CONFIG_ID" \
+          --benchmark_name="$BENCHMARK_NAME" \
+          --environment_config_id="$ENVIRONMENT_CONFIG_ID" \
+          --commit_sha="$COMMIT_SHA" \
+          --github_run_id="$GITHUB_RUN_ID" \
+          --workflow_type="$WORKFLOW_TYPE" \
+          --runner_label="$RUNNER_LABEL" \
+          --branch="$BRANCH" \
+          --run_url="$RUN_URL" \
+          --static_metadata_json="$STATIC_METADATA_JSON" \
+          --custom_metadata_json="$CUSTOM_METADATA_JSON" \
+          --workload_metadata_dir="$WORKLOAD_METADATA_DIR"
+
+        echo "benchmark_result_file=$BENCHMARK_RESULT_FILE" >> "$GITHUB_OUTPUT"
+        echo "::endgroup::"
+
+    - name: Upload benchmark result
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
+      with:
+        # Format: shard-benchmark-result-{CONFIG}[-{SUFFIX}]-{JOB_ID}
+        name: shard-benchmark-result-${{ fromJson(inputs.matrix).config_id }}${{ inputs.artifact_suffix }}-${{ inputs.job_id }}
+        path: ${{ steps.parse_tb_logs.outputs.benchmark_result_file }}
+        retention-days: 1
+
+    - name: Cleanup benchmark workspace
+      if: ${{ always() }}
+      shell: bash
+      run: |
+        echo "::group::Cleanup benchmark workspace"
+        set -euo pipefail
+        # Wipe output directories to ensure a clean state for subsequent runs.
+        rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+        mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+        echo "::endgroup::"

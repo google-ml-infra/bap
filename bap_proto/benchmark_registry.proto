@@ -48,6 +48,17 @@ message BenchmarkConfig {
   // Optional: Map of optional metadata
   map<string, string> metadata = 11;
 
+  // Defines the execution strategy for A/B testing.
+  enum AbStrategy {
+    // Default: Run baseline and experiment in parallel on separate machines.
+    PARALLEL = 0;
+    // Run baseline and experiment sequentially on the same physical machine (A/B Colocated mode).
+    COLOCATED = 1;
+  }
+
+  // Optional: The strategy to use when ab_mode is enabled.
+  AbStrategy ab_strategy = 12;
+
   // Prevent reuse of deleted tags.
   reserved 5, 6, 7;
 }

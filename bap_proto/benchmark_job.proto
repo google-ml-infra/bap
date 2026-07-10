@@ -30,6 +30,8 @@ enum AbTestGroup {
   BASELINE = 1;
   // The treatment group (experiment/candidate).
   EXPERIMENT = 2;
+  // Sequential execution of both groups on the same machine.
+  COLOCATED = 3;
 }
 
 // Represents a single, fully resolved job in the GitHub Actions matrix.
@@ -70,6 +72,13 @@ message BenchmarkJob {
   // Optional: Map of optional metadata
   map<string, string> metadata = 14;
 
+  // OPTIONAL: The git reference for the baseline group in A/B Colocated mode.
+  string baseline_ref = 15;
+
+  // OPTIONAL: The git reference for the experiment group in A/B Colocated mode.
+  string experiment_ref = 16;
+
   // Prevent reuse of deleted tags.
+
   reserved 6, 7, 8;
 }

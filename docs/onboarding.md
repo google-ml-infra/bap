@@ -134,6 +134,7 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 | `extras_hw` | No | Comma-separated list of hardware-specific extras. This list is appended to extras. |
 | `runtime_flags` | No |  Base runtime flags to pass to the benchmark script. |
 | `runtime_flags_hw` | No |  Hardware-specific runtime flags, appended to runtime_flags. |
+| `teardown` | No | If `"true"`, deletes the isolated virtual environment (`.venv`) created for the run. |
 
 #### Bazel Executor
 
@@ -147,6 +148,7 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 | `bazel_run_flags_hw` | No | Base flags to pass to the bazel run command. |
 | `runtime_flags` | No | Base runtime flags passed to the binary.
 | `runtime_flags_hw` | No | Hardware-specific runtime flags, appended to runtime_flags. |
+| `teardown` | No | If `"true"`, runs `bazel clean --expunge` at the end of the run to reclaim the entire output base (including caches and external repos). |
 
 ### Defining metrics
 
@@ -476,6 +478,46 @@ jobs:
     with:
       registry_file: "./my_registry.pbtxt"
       ab_mode: true # Enable A/B testing
+```
+
+### A/B Colocated Mode
+
+By default, BAP's A/B mode generates parallel jobs that run the baseline and experiment workloads on separate physical machines. While effective for canceling out temporal datacenter noise, this can introduce cross-machine hardware variance that may wash out the regression signal for extreme microbenchmarks with sub-1% margins (e.g., bare-metal memory transfers).
+
+To mitigate this, you can enable **A/B Colocated mode**, which runs both workloads sequentially on the exact same physical host.
+
+#### Enabling Colocated Mode
+
+To enable this for a specific benchmark, set `ab_strategy: COLOCATED` in your benchmark registry (`.pbtxt`):
+
+```proto
+benchmarks {
+  name: "high_precision_microbenchmark"
+  # ...
+  ab_strategy: COLOCATED
+}
+```
+
+When this strategy is used, the platform will provision a single runner and execute the baseline followed by the experiment. Results will still be reported and compared as usual in the sticky PR comment.
+
+### Workload Teardown
+
+When using A/B Colocated mode, internal state from the baseline run (e.g., warm Bazel daemons or Python virtual environments) might bleed into the experiment run and skew metrics.
+
+To facilitate a "cold start" for each run, BAP **defaults `teardown: "true"`** in the `action_inputs` when `ab_strategy: COLOCATED` is used. However, state cleanup is ultimately the responsibility of the workload executor.
+
+You can also explicitly enable or disable it for any benchmark by adding it to your `workload_action_inputs`:
+
+```proto
+benchmarks {
+  name: "high_precision_microbenchmark"
+  # ...
+  environment_configs {
+    id: "tpu_host"
+    # Force teardown (or set to 'false' to opt-out in Colocated mode)
+    workload_action_inputs { key: "teardown" value: "true" }
+  }
+}
 ```
 
 ## Artifact Bundling
