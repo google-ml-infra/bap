@@ -328,9 +328,9 @@ jobs:
     if: ${{ needs.generate_matrix.outputs.matrix != '[]' }}
 
     # For A/B mode, conditionally soft fail:
-    # If this is a baseline job, continue even if it fails,
-    # If this is an experiment job (or standard run), failure is fatal.
-    continue-on-error: ${{ matrix.ab_test_group == 'BASELINE' }}
+    # If this is a baseline job or a colocated job, continue even if it fails.
+    # If this is an experiment-only parallel job (or standard run), failure is fatal.
+    continue-on-error: ${{ matrix.ab_test_group == 'BASELINE' || matrix.ab_test_group == 'COLOCATED' }}
 
     strategy:
       fail-fast: false
