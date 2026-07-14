@@ -43,6 +43,7 @@ proto_library(
     name = "environment_config_proto",
     srcs = ["environment_config.proto"],
     deps = [
+        ":metric_proto",
         "@protovalidate//proto/protovalidate/buf/validate:validate_proto"
     ]
 )

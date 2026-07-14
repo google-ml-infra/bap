@@ -454,5 +454,61 @@ def test_generate_matrix_teardown_explicit_false_colocated():
   assert job["workload"]["action_inputs"]["teardown"] == "false"
 
 
+def test_generate_matrix_environment_specific_metrics():
+  """Tests that environment-specific metrics combine with and override top-level benchmark metrics."""
+  env_metrics_pbtxt = """
+    benchmarks {
+      name: "env_metrics_bench"
+      description: "A benchmark with environment-specific metrics."
+      owner: "perf-team"
+      workload {
+        action: "./ml_actions/actions/workload_executors/python"
+      }
+      metrics {
+        name: "top_level_metric"
+        unit: "ms"
+        stats { stat: MEDIAN }
+      }
+      environment_configs {
+        id: "cpu_env"
+        runner_label: "linux-x86-n2-32"
+        container_image: "gcr.io/testing/cpu-container:latest"
+        metrics {
+          name: "top_level_metric"
+          unit: "s"
+          stats { stat: MEDIAN }
+        }
+      }
+      environment_configs {
+        id: "gpu_env"
+        runner_label: "linux-x86-g2-16-l4-1gpu"
+        container_image: "gcr.io/testing/gpu-container:latest"
+        metrics {
+          name: "gpu_device_time"
+          unit: "ms"
+          stats { stat: MEDIAN }
+        }
+      }
+    }
+  """
+  suite = text_format.Parse(env_metrics_pbtxt, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+  matrix = generator.generate(suite, github_event="push")
+
+  assert len(matrix) == 2
+  cpu_job = next(j for j in matrix if j["environment_config"]["id"] == "cpu_env")
+  gpu_job = next(j for j in matrix if j["environment_config"]["id"] == "gpu_env")
+
+  # cpu_env overrides top_level_metric (changes unit from 'ms' to 's')
+  assert len(cpu_job["metrics"]) == 1
+  assert cpu_job["metrics"][0]["name"] == "top_level_metric"
+  assert cpu_job["metrics"][0]["unit"] == "s"
+
+  # gpu_env combines top_level_metric with gpu_device_time
+  assert len(gpu_job["metrics"]) == 2
+  gpu_metric_names = {m["name"] for m in gpu_job["metrics"]}
+  assert gpu_metric_names == {"top_level_metric", "gpu_device_time"}
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main(sys.argv))
