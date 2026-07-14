@@ -200,7 +200,16 @@ class MatrixGenerator:
         base_job.description = benchmark.description
         base_job.owner = benchmark.owner
         base_job.workload.CopyFrom(workload_action)
-        base_job.metrics.extend(benchmark.metrics)
+        # Combine top-level and environment-level metrics.
+        # Environment-level metrics override top-level metrics by name (or pattern).
+        merged_metrics = {}
+        for m in benchmark.metrics:
+          key = m.name or m.pattern
+          merged_metrics[key] = m
+        for m in env_config.metrics:
+          key = m.name or m.pattern
+          merged_metrics[key] = m
+        base_job.metrics.extend(merged_metrics.values())
         base_job.metadata.update(benchmark.metadata)
 
         jobs_to_emit = []

@@ -17,6 +17,7 @@ syntax = "proto3";
 package bap.common;
 
 import "buf/validate/validate.proto";
+import "bap_proto/common/metric.proto";
 
 // Defines the specific execution environment (runner, container image) and stable identity for a benchmark variant.
 message EnvironmentConfig {
@@ -36,6 +37,13 @@ message EnvironmentConfig {
   // Optional: Environment-specific tags (e.g. "presubmit", "gpu", "nightly").
   repeated string tags = 6;
 
+  // Optional: Environment-specific metrics to track for this environment.
+  // These metrics merge with top-level benchmark metrics by name (or pattern).
+  // If an environment metric matches a top-level metric name/pattern, it overrides it;
+  // otherwise, new metrics are appended to the combined list.
+  repeated MetricSpec metrics = 7;
+
   // Prevent reuse of deleted tags.
   reserved 4;
 }
+
