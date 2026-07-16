@@ -53,7 +53,7 @@ jobs:
     uses: google-ml-infra/bap/.github/workflows/run_benchmarks.yml@<commit | branch | tag>
     with:
       registry_file: "./my_registry.pbtxt"
-      ml_actions_ref: <commit | branch | tag>
+      bap_ref: <commit | branch | tag>
       publish_metrics: true
 ```
 
