@@ -13,19 +13,28 @@
 // limitations under the License.
 
 /**
- * Posts or updates A/B benchmark reports on PRs using a "sticky" comment to avoid clutter.
+ * Posts or updates benchmark reports on PRs using a "sticky" comment to avoid clutter.
  * It also appends the current run to a persistent history log within the comment for audit tracking.
  *
- * This script assumes that the GITHUB_WORKSPACE environment variable is set (standard in GitHub runners)
- * and that the ab_report.md file exists at the root of the GITHUB_WORKSPACE.
+ * @param {Object} params
+ * @param {Object} params.github - GitHub octokit client instance.
+ * @param {Object} params.context - GitHub Actions workflow execution context.
+ * @param {string} params.reportPath - Path to the benchmark markdown report to post.
+ * @param {string} params.commentMarker - Unique string used in HTML comment marker to namespace sticky comments.
  */
 
 const fs = require('fs');
 const path = require('path');
 
-module.exports = async ({ github, context }) => {
+module.exports = async ({ github, context, reportPath, commentMarker }) => {
+  if (!reportPath) {
+    throw new Error("reportPath is required.");
+  }
+  if (!commentMarker) {
+    throw new Error("commentMarker is required.");
+  }
+
   // Read Report
-  const reportPath = path.join(process.env.GITHUB_WORKSPACE, 'ab_report.md');
   let reportContent = '';
   
   try {
@@ -33,18 +42,16 @@ module.exports = async ({ github, context }) => {
       reportContent = fs.readFileSync(reportPath, 'utf8');
     } else {
       console.log(`Report file not found at: ${reportPath}`);
-      reportContent = "_A/B report file not found._";
+      reportContent = "_Benchmark report file not found._";
     }
   } catch (error) {
     console.error("Error reading report: " + error);
-    reportContent = "_Error reading A/B report content._";
+    reportContent = "_Error reading benchmark report content._";
   }
-
-  const workflowName = context.workflow;
 
   // Define HTML comments.
   // MAIN_MARKER serves as a unique identifier for the comment.
-  const MAIN_MARKER = '<!-- BAP: ' + workflowName + ' -->';
+  const MAIN_MARKER = '<!-- BAP: ' + commentMarker + ' -->';
   const HISTORY_START = '<!-- HISTORY_LIST_START -->';
   const HISTORY_END = '<!-- HISTORY_LIST_END -->';
 

@@ -119,13 +119,13 @@ def move_root_artifacts(raw_dir: Path, final_dir: Path, job_id: str) -> None:
     shutil.move(str(src_matrix), str(dest_matrix))
     print(f"Created {dest_matrix}")
 
-  # Move A/B report (if exists)
+  # Move report (if exists)
   report_dir_match = list(raw_dir.glob(f"shard-ab-report-{job_id}"))
   if not report_dir_match:
-    print("No A/B report artifact found.")
+    print("No report artifact found.")
   else:
-    src_report = report_dir_match[0] / "ab_report.md"
-    dest_report = final_dir / "ab_report.md"
+    src_report = report_dir_match[0] / "benchmark_report.md"
+    dest_report = final_dir / "benchmark_report.md"
     if src_report.exists():
       shutil.move(str(src_report), str(dest_report))
       print(f"Created {dest_report}")

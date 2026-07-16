@@ -137,12 +137,12 @@ def test_move_root_artifacts_success(tmp_path: Path):
 
   # Setup artifacts
   create_shard(raw_dir, f"shard-matrix-{job_id}", "matrix.json", {})
-  create_shard(raw_dir, f"shard-ab-report-{job_id}", "ab_report.md", "# Report")
+  create_shard(raw_dir, f"shard-ab-report-{job_id}", "benchmark_report.md", "# Report")
 
   artifact_bundler_lib.move_root_artifacts(raw_dir, final_dir, job_id)
 
   assert (final_dir / "matrix.json").exists()
-  assert (final_dir / "ab_report.md").exists()
+  assert (final_dir / "benchmark_report.md").exists()
 
 
 def test_move_root_artifacts_missing_matrix(tmp_path: Path):
@@ -170,10 +170,10 @@ def test_move_root_artifacts_missing_report(tmp_path: Path, capsys):
   artifact_bundler_lib.move_root_artifacts(raw_dir, final_dir, job_id)
 
   assert (final_dir / "matrix.json").exists()
-  assert not (final_dir / "ab_report.md").exists()
+  assert not (final_dir / "benchmark_report.md").exists()
 
   captured = capsys.readouterr()
-  assert "No A/B report artifact found" in captured.out
+  assert "No report artifact found" in captured.out
 
 
 # --- Tests for Benchmark Processing ---
