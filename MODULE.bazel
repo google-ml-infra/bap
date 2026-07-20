@@ -18,6 +18,8 @@ module(
 )
 
 bazel_dep(name = "rules_python", version = "1.6.3")
+bazel_dep(name = "rules_pkg", version = "0.10.1")
+bazel_dep(name = "rules_oci", version = "1.7.6")
 bazel_dep(name = "protobuf", version = "32.1")
 bazel_dep(name = "protovalidate", version = "1.0.0")
 
@@ -36,3 +38,13 @@ pip.parse(
     extra_pip_args = ["--index-url", "https://pypi.org/simple"],
 )
 use_repo(pip, "pypi")
+
+# --- OCI Dependencies Setup ---
+oci = use_extension("@rules_oci//oci:extensions.bzl", "oci")
+oci.pull(
+    name = "python_base",
+    image = "docker.io/library/python",
+    tag = "3.11-slim",
+    platforms = ["linux/amd64"],
+)
+use_repo(oci, "python_base")
