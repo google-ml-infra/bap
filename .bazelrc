@@ -3,6 +3,7 @@ common --incompatible_default_to_explicit_init_py
 
 # Use a minimal venv and don't require a system python to bootstrap
 common --@rules_python//python/config_settings:bootstrap_impl=script
+common --@rules_python//python/config_settings:venvs_use_declare_symlink=no
 
 # Remote caching. Write is limited to CI.
 common --google_default_credentials=true

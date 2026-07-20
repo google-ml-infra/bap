@@ -11,6 +11,9 @@ dependencies = [
     "tensorboardx",
     "google-cloud-pubsub",
     "tabulate",
+    "google-cloud-bigquery",
+    "protobuf",
+    "functions-framework",
 ]
 
 [project.optional-dependencies]
