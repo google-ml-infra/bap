@@ -49,8 +49,13 @@ setup_ppa() {
 # Configure PPA
 setup_ppa
 
-# Install Python + distutils
-apt-get install -y -qq "python${VERSION}" "python${VERSION}-distutils" "python${VERSION}-venv" >/dev/null
+# Install Python + venv (and distutils if available for Python < 3.12)
+PACKAGES=("python${VERSION}" "python${VERSION}-venv")
+if apt-cache show "python${VERSION}-distutils" >/dev/null 2>&1; then
+  PACKAGES+=("python${VERSION}-distutils")
+fi
+
+apt-get install -y -qq "${PACKAGES[@]}" >/dev/null
 
 # Set newly installed Python version as system default
 update-alternatives --install /usr/bin/python python "/usr/bin/python${VERSION}" 1 >/dev/null
