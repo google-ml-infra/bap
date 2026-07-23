@@ -9,30 +9,66 @@ absl-py==2.3.1
     #   keras
     #   tensorboard
     #   tensorflow
+anyio==4.14.2
+    # via starlette
 astunparse==1.6.3
     # via tensorflow
+blinker==1.9.0
+    # via flask
 cel-python==0.2.0
     # via protovalidate
 certifi==2026.1.4
     # via requests
+cffi==2.1.0
+    # via cryptography
 charset-normalizer==3.4.4
     # via requests
+click==8.4.2
+    # via
+    #   flask
+    #   functions-framework
+    #   uvicorn
+cloudevents==1.12.0
+    # via functions-framework
+cryptography==49.0.0
+    # via
+    #   google-auth
+    #   pyopenssl
+deprecation==2.1.0
+    # via cloudevents
+flask==3.1.3
+    # via functions-framework
 flatbuffers==25.12.19
     # via tensorflow
+functions-framework==3.10.2
+    # via ml-actions-benchmarking (pyproject.toml)
 gast==0.7.0
     # via tensorflow
 google-api-core[grpc]==2.29.0
-    # via google-cloud-pubsub
-google-auth==2.47.0
+    # via
+    #   google-cloud-bigquery
+    #   google-cloud-core
+    #   google-cloud-pubsub
+google-auth[pyopenssl]==2.47.0
     # via
     #   google-api-core
+    #   google-cloud-bigquery
+    #   google-cloud-core
     #   google-cloud-pubsub
+google-cloud-bigquery==3.42.2
+    # via ml-actions-benchmarking (pyproject.toml)
+google-cloud-core==2.6.0
+    # via google-cloud-bigquery
 google-cloud-pubsub==2.34.0
     # via ml-actions-benchmarking (pyproject.toml)
+google-crc32c==1.8.0
+    # via google-resumable-media
 google-pasta==0.2.0
     # via tensorflow
 google-re2==1.1.20251105
     # via protovalidate
+google-resumable-media==2.10.0
+    # via google-cloud-bigquery
 googleapis-common-protos[grpc]==1.72.0
     # via
     #   google-api-core
@@ -53,16 +89,28 @@ grpcio-status==1.76.0
     # via
     #   google-api-core
     #   google-cloud-pubsub
+gunicorn==26.0.0
+    # via
+    #   functions-framework
+    #   uvicorn-worker
+h11==0.16.0
+    # via uvicorn
 h5py==3.15.1
     # via
     #   keras
     #   tensorflow
 idna==3.11
-    # via requests
+    # via
+    #   anyio
+    #   requests
 importlib-metadata==8.7.1
     # via opentelemetry-api
 iniconfig==2.3.0
     # via pytest
+itsdangerous==2.2.0
+    # via flask
+jinja2==3.1.6
+    # via flask
 jmespath==1.0.1
     # via cel-python
 keras==3.13.0
@@ -76,7 +124,10 @@ markdown==3.10
 markdown-it-py==4.0.0
     # via rich
 markupsafe==3.0.3
-    # via werkzeug
+    # via
+    #   flask
+    #   jinja2
+    #   werkzeug
 mdurl==0.1.2
     # via markdown-it-py
 ml-dtypes==0.5.4
@@ -109,6 +160,9 @@ optree==0.18.0
     # via keras
 packaging==25.0
     # via
+    #   deprecation
+    #   google-cloud-bigquery
+    #   gunicorn
     #   keras
     #   pytest
     #   tensorboard
@@ -130,6 +184,7 @@ protobuf==6.33.4
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
+    #   ml-actions-benchmarking (pyproject.toml)
     #   proto-plus
     #   protovalidate
     #   tensorboard
@@ -143,19 +198,26 @@ pyasn1==0.6.1
     #   rsa
 pyasn1-modules==0.4.2
     # via google-auth
+pycparser==3.0
+    # via cffi
 pygments==2.19.2
     # via
     #   pytest
     #   rich
+pyopenssl==26.3.0
+    # via google-auth
 pytest==9.0.2
     # via ml-actions-benchmarking (pyproject.toml)
 python-dateutil==2.9.0.post0
-    # via cel-python
+    # via
+    #   cel-python
+    #   google-cloud-bigquery
 pyyaml==6.0.3
     # via cel-python
 requests==2.32.5
     # via
     #   google-api-core
+    #   google-cloud-bigquery
     #   tensorflow
 rich==14.2.0
     # via keras
@@ -167,6 +229,8 @@ six==1.17.0
     #   google-pasta
     #   python-dateutil
     #   tensorflow
+starlette==1.3.1
+    # via functions-framework
 tensorboard==2.20.0
     # via
     #   ml-actions-benchmarking (pyproject.toml)
@@ -185,16 +249,30 @@ types-pyyaml==6.0.12.20250915
     # via cel-python
 typing-extensions==4.15.0
     # via
+    #   anyio
     #   grpcio
     #   opentelemetry-api
     #   opentelemetry-sdk
     #   opentelemetry-semantic-conventions
     #   optree
+    #   pyopenssl
+    #   starlette
     #   tensorflow
 urllib3==2.6.3
     # via requests
+uvicorn==0.51.0
+    # via
+    #   functions-framework
+    #   uvicorn-worker
+uvicorn-worker==0.4.0
+    # via functions-framework
+watchdog==6.0.0
+    # via functions-framework
 werkzeug==3.1.5
-    # via tensorboard
+    # via
+    #   flask
+    #   functions-framework
+    #   tensorboard
 wheel==0.46.1
     # via astunparse
 wrapt==2.0.1

@@ -1,0 +1,49 @@
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
+load("@rules_pkg//:pkg.bzl", "pkg_tar")
+load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push")
+
+py_binary(
+    name = "main",
+    srcs = ["main.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//bap_proto:benchmark_result_py_proto",
+        "//bap_proto/common:workflow_type_py_proto",
+        "@pypi//google_cloud_bigquery",
+        "@pypi//protobuf",
+        "@pypi//protovalidate",
+        "@pypi//functions_framework"
+    ],
+)
+
+pkg_tar(
+    name = "bap_datastudio_ingester_tar",
+    srcs = [":main"],
+    include_runfiles = True,
+    mode = "0555",
+)
+
+oci_image(
+    name = "bap_datastudio_ingester_image",
+    base = "@python_base",
+    entrypoint = [
+        "/main",
+    ],
+    workdir = "/main.runfiles/_main",
+    tars = [":bap_datastudio_ingester_tar"],
+)
+
+genrule(
+    name = "version_tags",
+    outs = ["tags.txt"],
+    cmd = "echo latest > $@ && git rev-parse HEAD >> $@",
+    stamp = 1,
+    tags = ["local", "no-remote"],
+)
+
+oci_push(
+    name = "bap_datastudio_ingester_push",
+    image = ":bap_datastudio_ingester_image",
+    repository = "us-central1-docker.pkg.dev/ruturajmohite-sandbox-638330/bap-datastudio-test/main",
+    remote_tags = ":version_tags",
+)
