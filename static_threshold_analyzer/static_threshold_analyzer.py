@@ -25,6 +25,7 @@ from bap_proto import benchmark_result_pb2
 from static_threshold_analyzer.static_threshold_analyzer_lib import (
   StaticAnalyzer,
 )
+from utils import markdown_formatter
 
 
 def load_results(
@@ -106,7 +107,11 @@ def main():
 
   results = load_results(args.results_dir)
 
-  lines: list[str] = [f"## Static Threshold Analysis: {args.workflow_name}"]
+  sections = [
+    markdown_formatter.format_header(
+      f"Static Threshold Analysis: {args.workflow_name}", level=1
+    )
+  ]
   global_success = True
 
   for config_id, job in matrix_map.items():
@@ -115,19 +120,18 @@ def main():
       analyzer = StaticAnalyzer(list(job.metrics))
       analyzer.run_analysis(result)
       section_md, is_success = analyzer.generate_report_section(config_id)
-      lines.append("\n" + section_md)
+      sections.append(section_md)
       if not is_success:
         global_success = False
     else:
-      lines.append(
-        f"\n### {config_id}\n_No benchmark results found. The workload may have crashed, timed out, or failed prior to reporting._"
+      sections.append(
+        f"### {config_id}\n_No benchmark results found. The workload may have"
+        " crashed, timed out, or failed prior to reporting._"
       )
       global_success = False
 
-  status_msg = "🟢 PASS" if global_success else "🔴 FAIL"
-  lines.append(f"\n**Global Status:** {status_msg}")
-
-  report_content = "\n".join(lines)
+  sections.append(f"**Global Status:** {'🟢 PASS' if global_success else '🔴 FAIL'}")
+  report_content = "\n\n".join(sections)
   args.output_file.write_text(report_content)
   print(f"Report written to {args.output_file}")
 

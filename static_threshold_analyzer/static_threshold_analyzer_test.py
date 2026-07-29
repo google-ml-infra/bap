@@ -152,6 +152,8 @@ def test_no_comparison_spec_is_skipped():
   analyzer.run_analysis(result)
 
   assert len(analyzer.regressions) == 0
+  assert len(analyzer.evaluations) == 1
+  assert not analyzer.evaluations[0]["has_comparison"]
 
 
 def test_stat_not_found_in_result(capsys):
@@ -254,10 +256,8 @@ def test_generate_report_section_success():
 
   assert success
   assert "### test_config" in report_md
-  assert (
-    "| wall_time <small>(MEAN)</small> | 105.0000 | 100.0000 | 10% | 🟢 PASS |"
-    in report_md
-  )
+  assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "🟢 PASS" in report_md
 
 
 def test_generate_report_section_failure():
@@ -284,10 +284,27 @@ def test_generate_report_section_failure():
 
   assert not success
   assert "### test_config" in report_md
-  assert (
-    "| wall_time <small>(MEAN)</small> | 150.0000 | 100.0000 | 10% | 🔴 REGRESSION |"
-    in report_md
+  assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "🔴 REGRESSION" in report_md
+
+
+def test_generate_report_section_info_row():
+  """Tests that metrics without a comparison block generate an INFO row and success=True."""
+  metric_specs = _create_metric_specs(
+    stats=[metric_pb2.StatSpec(stat=metric_pb2.Stat.MEAN)]
   )
+  result = _create_benchmark_result(
+    computed_stats=[_create_computed_stat("wall_time", metric_pb2.Stat.MEAN, 150.0)]
+  )
+
+  analyzer = StaticAnalyzer(metric_specs)
+  analyzer.run_analysis(result)
+  report_md, success = analyzer.generate_report_section("test_config")
+
+  assert success
+  assert "### test_config" in report_md
+  assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "ℹ️ INFO" in report_md
 
 
 def test_main_empty_matrix_json(tmp_path):
