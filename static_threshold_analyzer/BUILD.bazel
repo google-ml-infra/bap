@@ -22,6 +22,7 @@ py_library(
     deps = [
         "//bap_proto:benchmark_result_py_proto",
         "//bap_proto/common:metric_py_proto",
+        "//utils:markdown_formatter",
     ],
 )
 
@@ -33,6 +34,7 @@ py_binary(
         ":static_threshold_analyzer_lib",
         "//bap_proto:benchmark_job_py_proto",
         "//bap_proto:benchmark_result_py_proto",
+        "//utils:markdown_formatter",
     ],
 )
 

@@ -136,7 +136,7 @@ def test_load_results_parsing(tmp_path: Path, subtests) -> None:
 def test_get_comparison_config_defaults():
   """Test fallback to defaults when config is missing."""
   matrix = {}
-  threshold, direction = ab_analyzer_lib.get_comparison_config(
+  threshold, direction = ab_analyzer_lib._get_comparison_config(
     matrix, "foo", "bar", metric_pb2.Stat.MEAN
   )
 
@@ -155,7 +155,7 @@ def test_get_comparison_config_specific():
   )
   matrix = {"my_model": job}
 
-  threshold, direction = ab_analyzer_lib.get_comparison_config(
+  threshold, direction = ab_analyzer_lib._get_comparison_config(
     matrix, "my_model", "accuracy", metric_pb2.Stat.MEAN
   )
 
@@ -302,14 +302,23 @@ def test_missing_baseline_warns():
   assert "**Global Status:** 🟢 PASS" in report
 
 
-def test_link_generation():
-  """Test that commit links are generated correctly."""
-  res = benchmark_result_pb2.BenchmarkResult()
-  res.commit_sha = "abcdef1234567890"
-  res.run_url = "https://github.com/org/repo/actions/runs/123"
+def test_missing_experiment_stat():
+  """Test that a metric present in baseline but missing from experiment is shown as MISSING."""
+  base = make_result("model_a", {"latency": {metric_pb2.Stat.MEAN: 100.0}})
+  exp = make_result("model_a", {})  # latency is missing in experiment
+  results = {
+    "model_a": {
+      benchmark_job_pb2.AbTestGroup.BASELINE: base,
+      benchmark_job_pb2.AbTestGroup.EXPERIMENT: exp,
+    }
+  }
 
-  link = ab_analyzer_lib.get_commit_link_markdown(res, "https://github.com/org/repo")
-  assert link == "[abcdef1](https://github.com/org/repo/commit/abcdef1234567890)"
+  report, success = ab_analyzer_lib.generate_report(
+    results, {}, "http://repo", "TestFlow"
+  )
+
+  assert not success
+  assert "🔴 MISSING" in report
 
 
 if __name__ == "__main__":

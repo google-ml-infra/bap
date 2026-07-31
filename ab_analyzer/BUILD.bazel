@@ -23,6 +23,7 @@ py_library(
         "//bap_proto:benchmark_job_py_proto",
         "//bap_proto:benchmark_result_py_proto",
         "//bap_proto/common:metric_py_proto",
+        "//utils:markdown_formatter",
     ],
 )
 

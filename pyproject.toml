@@ -10,6 +10,7 @@ dependencies = [
     "tensorboard",
     "tensorboardx",
     "google-cloud-pubsub",
+    "tabulate",
 ]
 
 [project.optional-dependencies]

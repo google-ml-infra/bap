@@ -22,6 +22,7 @@ from google.protobuf import json_format
 from bap_proto import benchmark_job_pb2
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
+from utils import markdown_formatter
 
 # Maps A/B group to benchmark result.
 AbGroupResultMap: TypeAlias = Mapping[
@@ -59,9 +60,7 @@ def load_results(results_dir: Path) -> ResultMapping:
   results = {}
 
   for path in results_dir.rglob("benchmark_result.json"):
-    # Format: shard-benchmark-result-{CONFIG}[-{AB_MODE}]-{JOB_ID}
     dir_name = path.parent.name
-
     base_idx = dir_name.rfind("-BASELINE-")
     exp_idx = dir_name.rfind("-EXPERIMENT-")
 
@@ -97,7 +96,7 @@ def load_results(results_dir: Path) -> ResultMapping:
   return results
 
 
-def get_comparison_config(
+def _get_comparison_config(
   matrix_map: Mapping[str, benchmark_job_pb2.BenchmarkJob],
   config_id: str,
   metric_name: str,
@@ -116,7 +115,6 @@ def get_comparison_config(
       - threshold (float): The allowed regression threshold (e.g., 0.05 for 5%).
       - direction (ImprovementDirection): The direction that indicates improvement.
   """
-
   default_threshold = 0.05
   default_direction = metric_pb2.ImprovementDirection.LESS
 
@@ -140,33 +138,104 @@ def get_comparison_config(
     != metric_pb2.ImprovementDirection.IMPROVEMENT_DIRECTION_UNSPECIFIED
     else default_direction
   )
-
   return threshold, direction
 
 
-def get_commit_link_markdown(
-  result_proto: benchmark_result_pb2.BenchmarkResult, repo_url: str
-) -> str:
-  """Generates a Markdown-formatted link to a specific commit.
+def _is_ab_regression(
+  base_val: float | None,
+  exp_val: float | None,
+  threshold: float,
+  direction: metric_pb2.ImprovementDirection,
+) -> bool:
+  """Evaluates whether an A/B metric comparison represents a regression.
 
   Args:
-      result_proto: The benchmark result protobuf containing the commit SHA.
-      repo_url: The base URL of the source repository (e.g., "https://github.com/org/repo").
+      base_val: Baseline metric statistic value, or None if missing.
+      exp_val: Experiment metric statistic value, or None if missing.
+      threshold: Allowed percentage regression threshold (e.g. 0.05).
+      direction: Direction indicating metric improvement (LESS or GREATER).
 
   Returns:
-      A Markdown string linking to the commit (e.g., "[abcdef1](.../commit/abcdef1...)").
-      Returns "unknown" if the commit SHA is missing from the result.
+      True if the experiment result regressed relative to baseline, False otherwise.
   """
-  if not result_proto.commit_sha:
-    return "unknown"
+  if exp_val is None:
+    return True
+  if base_val is None or base_val == 0:
+    return False
 
-  full_sha = result_proto.commit_sha
-  short_sha = full_sha[:7]
+  delta = (exp_val - base_val) / base_val
+  return (
+    delta > threshold
+    if direction == metric_pb2.ImprovementDirection.LESS
+    else delta < -threshold
+  )
 
-  # Remove trailing slashes from repo_url just in case
-  clean_repo_url = repo_url.rstrip("/")
 
-  return f"[{short_sha}]({clean_repo_url}/commit/{full_sha})"
+def _format_ab_metric_row(
+  metric_name: str,
+  stat: metric_pb2.Stat,
+  base_val: float | None,
+  exp_val: float | None,
+  threshold: float,
+  direction: metric_pb2.ImprovementDirection,
+  is_reg: bool,
+) -> list[str]:
+  """Formats a single A/B metric comparison row.
+
+  Args:
+      metric_name: Name of the metric (e.g., 'wall_time').
+      stat: The evaluated statistic enum.
+      base_val: Baseline statistic value.
+      exp_val: Experiment statistic value.
+      threshold: Regression threshold.
+      direction: Improvement direction.
+      is_reg: Boolean indicating if metric comparison is a regression.
+
+  Returns:
+      A list of formatted cell strings for the Markdown table row.
+  """
+  name = markdown_formatter.format_with_subtext(metric_name, metric_pb2.Stat.Name(stat))
+  th_str = markdown_formatter.format_percent(threshold)
+
+  if exp_val is None:
+    return [
+      name,
+      markdown_formatter.format_float(base_val),
+      "-",
+      "N/A",
+      th_str,
+      markdown_formatter.format_status(None, missing_exp=True),
+    ]
+  if base_val is None:
+    return [
+      name,
+      "-",
+      markdown_formatter.format_float(exp_val),
+      "N/A",
+      th_str,
+      markdown_formatter.format_status(None, missing_base=True),
+    ]
+  if base_val == 0:
+    return [
+      name,
+      "0",
+      markdown_formatter.format_float(exp_val),
+      "0.00%" if exp_val == 0 else "∞",
+      th_str,
+      markdown_formatter.format_status(
+        False if exp_val == 0 else None, undetermined=(exp_val != 0)
+      ),
+    ]
+
+  delta = (exp_val - base_val) / base_val
+  return [
+    name,
+    markdown_formatter.format_float(base_val),
+    markdown_formatter.format_float(exp_val),
+    markdown_formatter.format_percent(delta, precision=2, signed=True),
+    th_str,
+    markdown_formatter.format_status(is_reg),
+  ]
 
 
 def generate_report(
@@ -192,94 +261,74 @@ def generate_report(
   Raises:
       ValueError: If the results mapping is empty.
   """
-  lines: list[str] = [f"## A/B Benchmark Results: {workflow_name}"]
-  global_success: bool = True
-
   if not results:
     raise ValueError("No A/B benchmark results found.")
 
-  for config_id, result in results.items():
-    baseline_result = result.get(benchmark_job_pb2.AbTestGroup.BASELINE)
-    experiment_result = result.get(benchmark_job_pb2.AbTestGroup.EXPERIMENT)
+  sections = [
+    markdown_formatter.format_header(f"A/B Benchmark Results: {workflow_name}", level=1)
+  ]
+  global_success = True
 
-    if not experiment_result:
-      lines.append(f"\n### {config_id}: FAILED (Experiment Missing)")
-      lines.append("The experiment benchmark job failed to produce results.")
+  for config_id, result in results.items():
+    base_res, exp_res = (
+      result.get(benchmark_job_pb2.AbTestGroup.BASELINE),
+      result.get(benchmark_job_pb2.AbTestGroup.EXPERIMENT),
+    )
+
+    if not exp_res:
+      sections.append(
+        f"### {config_id}: FAILED (Experiment Missing)\nThe experiment"
+        " benchmark job failed to produce results."
+      )
       global_success = False
       continue
-
-    if not baseline_result:
-      lines.append(f"\n### {config_id}: Incomplete (Baseline Missing)")
-      lines.append(
-        "Valid comparison could not be made because the Baseline job failed."
+    if not base_res:
+      sections.append(
+        f"### {config_id}: Incomplete (Baseline Missing)\nValid comparison"
+        " could not be made because the Baseline job failed."
       )
       continue
 
-    # Extract commit links
-    base_link = get_commit_link_markdown(baseline_result, repo_url)
-    exp_link = get_commit_link_markdown(experiment_result, repo_url)
+    b_stats = {(s.metric_name, s.stat): s.value.value for s in base_res.stats}
+    e_stats = {(s.metric_name, s.stat): s.value.value for s in exp_res.stats}
 
-    lines.append(f"\n### {config_id}")
-
-    # Header
-    lines.append(
-      f"| Metric | Baseline <br> ({base_link}) | Experiment <br> ({exp_link}) | Delta | Threshold | Status |"
-    )
-    lines.append("| :--- | :--- | :--- | :--- | :--- | :--- |")
-
-    base_stats: Mapping[tuple[str, metric_pb2.Stat], float] = {
-      (s.metric_name, s.stat): s.value.value for s in baseline_result.stats
-    }
-    exp_stats: Mapping[tuple[str, metric_pb2.Stat], float] = {
-      (s.metric_name, s.stat): s.value.value for s in experiment_result.stats
-    }
-
-    for (metric_name, stat), exp_val in exp_stats.items():
-      base_val = base_stats.get((metric_name, stat))
-      stat_name = metric_pb2.Stat.Name(stat)
-      display_name = f"{metric_name} <small>({stat_name})</small>"
-      threshold, direction = get_comparison_config(
+    rows = []
+    for metric_name, stat in sorted(set(b_stats.keys()) | set(e_stats.keys())):
+      base_val, exp_val = (
+        b_stats.get((metric_name, stat)),
+        e_stats.get((metric_name, stat)),
+      )
+      thresh, direction = _get_comparison_config(
         matrix_map, config_id, metric_name, stat
       )
 
-      if base_val is None:
-        delta_str = "N/A"
-        base_str = "-"
-        status = "🔵 NEW"
+      is_reg = _is_ab_regression(base_val, exp_val, thresh, direction)
+      if is_reg:
+        global_success = False
 
-      elif base_val == 0:
-        base_str = "0"
-        if exp_val == 0:
-          delta_str = "0.00%"
-          status = "🟢 PASS"
-        else:
-          delta_str = "∞"
-          status = "🟡 UNDETERMINED"
-
-      else:
-        delta = (exp_val - base_val) / base_val
-        delta_str = f"{delta:+.2%}"
-        base_str = f"{base_val:.4f}"
-
-        is_regression = False
-        if direction == metric_pb2.ImprovementDirection.LESS:
-          if delta > threshold:
-            is_regression = True
-        else:
-          if delta < -threshold:
-            is_regression = True
-
-        if is_regression:
-          status = "🔴 REGRESSION"
-          global_success = False
-        else:
-          status = "🟢 PASS"
-
-      lines.append(
-        f"| {display_name} | {base_str} | {exp_val:.4f} | {delta_str} | {threshold:.0%} | {status} |"
+      rows.append(
+        _format_ab_metric_row(
+          metric_name, stat, base_val, exp_val, thresh, direction, is_reg
+        )
       )
 
-  status_msg = "🟢 PASS" if global_success else "🔴 FAIL"
-  lines.append(f"\n**Global Status:** {status_msg}")
+    headers = [
+      "Metric",
+      (
+        "Baseline <br>"
+        f" ({markdown_formatter.format_commit_link(base_res.commit_sha, repo_url)})"
+      ),
+      (
+        "Experiment <br>"
+        f" ({markdown_formatter.format_commit_link(exp_res.commit_sha, repo_url)})"
+      ),
+      "Delta",
+      "Threshold",
+      "Status",
+    ]
+    sections.append(
+      markdown_formatter.format_table(rows, headers=headers, title=config_id)
+    )
 
-  return "\n".join(lines), global_success
+  sections.append(f"**Global Status:** {'🟢 PASS' if global_success else '🔴 FAIL'}")
+  return "\n\n".join(sections), global_success
