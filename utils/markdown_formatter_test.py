@@ -39,6 +39,8 @@ def test_format_percent():
   assert (
     markdown_formatter.format_percent(-0.0543, precision=2, signed=True) == "-5.43%"
   )
+  assert markdown_formatter.format_percent(0.0, precision=2, signed=True) == "0.00%"
+  assert markdown_formatter.format_percent(-0.0, precision=2, signed=True) == "0.00%"
 
 
 def test_format_header():

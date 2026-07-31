@@ -169,7 +169,6 @@ class StaticAnalyzer:
       (stat.metric_name, metric_pb2.Stat.Name(stat.stat)): stat
       for stat in benchmark_result.stats
     }
-    evaluated_keys: set[tuple[str, str]] = set()
 
     for metric_spec in self.metric_specs:
       for stat_spec in metric_spec.stats:
@@ -187,7 +186,6 @@ class StaticAnalyzer:
 
         comparison = stat_spec.comparison if stat_spec.HasField("comparison") else None
         for concrete_metric in matched_metrics:
-          evaluated_keys.add((concrete_metric, stat_name))
           evaluation = _evaluate_metric(
             benchmark_result.config_id,
             concrete_metric,

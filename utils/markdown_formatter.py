@@ -57,6 +57,8 @@ def format_percent(val: float | None, precision: int = 0, signed: bool = False) 
   """
   if val is None:
     return "-"
+  if val == 0:
+    return f"{0.0:.{precision}%}"
   sign = "+" if signed else ""
   return f"{val:{sign}.{precision}%}"
 
@@ -139,7 +141,7 @@ def format_table(
   Returns:
       Formatted Markdown string containing the optional title and table.
   """
-  header = f"{format_header(title, title_level)}\n" if title else ""
+  header = f"{format_header(title, title_level)}\n\n" if title else ""
   align = (
     colalign
     if colalign is not None
