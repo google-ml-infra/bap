@@ -126,7 +126,7 @@ jobs:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:fa95dacafd53199ab68e3c28c488c0cc0d5fad3a4b0ac20af27f2bd0a061a55d # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     steps:
       - name: Check out user repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -144,7 +144,7 @@ jobs:
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
       - name: Check out BAP repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ steps.resolve_refs.outputs.bap_ref }}
@@ -177,7 +177,7 @@ jobs:
       job_id: ${{ steps.gen_job_id.outputs.job_id }}
     steps:
       - name: Check out user repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
@@ -252,7 +252,7 @@ jobs:
           echo "::endgroup::"
 
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ steps.resolve_refs.outputs.bap_ref }}
@@ -338,7 +338,7 @@ jobs:
 
     steps:
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
@@ -484,7 +484,7 @@ jobs:
     if: always() && !cancelled()
     steps:
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
@@ -590,7 +590,7 @@ jobs:
 
     steps:
       - name: Check out ML actions repo
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}

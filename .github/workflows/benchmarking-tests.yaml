@@ -42,7 +42,7 @@ jobs:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:e1461af32bf27640ddbcde7c3e7a10f194142779e9ed3bba962040812e626a1c # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.1
         with:
           persist-credentials: false
       - name: Run benchmarking Bazel tests
@@ -73,7 +73,7 @@ jobs:
             expected: "failure"
     steps:
       - name: Checkout toolkit
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
