@@ -1,3 +1,32 @@
+# Copyright 2026 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""Cloud Function for ingesting benchmark results into BigQuery.
+
+Environment Variables:
+    - DATASET_ID: Required. The BigQuery dataset ID where benchmark results are written
+      (into `<project_id>.<dataset_id>.raw_benchmark_results`). Must not contain hyphens.
+      (e.g., via Terraform, `gcloud functions deploy --set-env-vars`, or container env vars).
+    - TEAM_GITHUB_REPO: Required. The repository name in 'org/repo' format (e.g. 'google-ml-infra/bap').
+      Used to filter incoming Pub/Sub events so only matching messages are ingested.
+    - PROJECT_ID: Optional. GCP project ID for BigQuery. If not set, defaults to the project ID
+      associated with the BigQuery client service account / application default credentials.
+    - PORT: Optional. HTTP port used by Functions Framework (defaults to "8080").
+
+    Environment variables are injected into this script during deployment via terraform
+"""
+
 import base64
 import binascii
 import functools
@@ -15,6 +44,14 @@ from bap_proto.common import workflow_type_pb2
 
 
 def get_dataset_id() -> str:
+  """Retrieves and validates the BigQuery dataset ID from environment variables.
+
+  Returns:
+      The BigQuery dataset ID string.
+
+  Raises:
+      ValueError: If DATASET_ID environment variable is missing or contains hyphens.
+  """
   dataset_id = os.environ.get("DATASET_ID")
   if not dataset_id:
     raise ValueError("DATASET_ID env variable is required")
@@ -24,6 +61,15 @@ def get_dataset_id() -> str:
 
 
 def get_team_github_repo() -> str:
+  """Retrieves and validates the GitHub repository name from environment variables.
+
+  Returns:
+      The repository string in 'org/repo' format.
+
+  Raises:
+      ValueError: If TEAM_GITHUB_REPO environment variable is missing or not in
+          'org/repo' format.
+  """
   repo = os.environ.get("TEAM_GITHUB_REPO")
   if not repo:
     raise ValueError("TEAM_GITHUB_REPO environment variable is required")
@@ -33,25 +79,46 @@ def get_team_github_repo() -> str:
 
 
 def get_project_id() -> str | None:
+  """Retrieves the GCP project ID from environment variables if set.
+
+  Returns:
+      The GCP project ID string, or None if not set.
+  """
   # bq client selects the project id from default credentials if not provided.
   return os.environ.get("PROJECT_ID")
 
 
 @functools.cache
 def get_bq_client() -> bigquery.Client:
+  """Returns a cached BigQuery client instance.
+
+  Returns:
+      A bigquery.Client instance.
+  """
   return bigquery.Client()
 
 
 @functools.cache
 def get_validator() -> Validator:
+  """Returns a cached Protovalidate Validator instance.
+
+  Returns:
+      A protovalidate.Validator instance.
+  """
   return Validator()
 
 
 @functions_framework.cloud_event
 def subscribe(cloud_event: CloudEvent) -> None:
   """Triggered from a message on a Cloud Pub/Sub topic via Eventarc or Push.
+
   Args:
-       cloud_event (cloudevents.http.CloudEvent): The CloudEvent payload.
+      cloud_event (cloudevents.http.CloudEvent): The CloudEvent payload.
+
+  Raises:
+      ValueError: If the event data is missing, base64 decoding fails, JSON payload is
+          invalid, proto parsing fails, or validation fails.
+      RuntimeError: If inserting rows into BigQuery encounters errors.
   """
   if "message" not in cloud_event.data or "data" not in cloud_event.data["message"]:
     raise ValueError("No data in event")
@@ -59,7 +126,7 @@ def subscribe(cloud_event: CloudEvent) -> None:
   github_repo = get_team_github_repo()
   repo_attr = cloud_event.data["message"].get("attributes", {}).get("repo")
   if repo_attr != github_repo:
-    logging.info(
+    logging.warning(
       f"Discarding message: repo attribute '{repo_attr}' does not match TEAM_GITHUB_REPO '{github_repo}'"
     )
     return
@@ -68,7 +135,6 @@ def subscribe(cloud_event: CloudEvent) -> None:
     pubsub_message = base64.b64decode(cloud_event.data["message"]["data"]).decode(
       "utf-8"
     )
-    payload_dict = json.loads(pubsub_message)
   except binascii.Error as e:
     raise ValueError(f"Failed to base64 decode pubsub message: {e}") from e
   except (UnicodeDecodeError, json.JSONDecodeError) as e:
