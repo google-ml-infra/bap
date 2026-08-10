@@ -15,8 +15,6 @@
 """Tests for the Data Studio integration Cloud Function."""
 
 import base64
-import json
-import os
 import sys
 import pytest
 from unittest.mock import MagicMock, patch

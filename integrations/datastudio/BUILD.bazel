@@ -67,6 +67,6 @@ genrule(
 oci_push(
     name = "bap_datastudio_ingester_push",
     image = ":bap_datastudio_ingester_image",
-    repository = "us-central1-docker.pkg.dev/ruturajmohite-sandbox-638330/bap-datastudio-test/main",
+    repository = "us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/bap-datastudio-ingester",
     remote_tags = ":version_tags",
 )
