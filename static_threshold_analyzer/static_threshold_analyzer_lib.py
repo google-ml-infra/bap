@@ -209,13 +209,14 @@ class StaticAnalyzer:
     """
     rows = []
     for item in self.evaluations:
+      unit = item.get("unit", "")
       name = markdown_formatter.format_with_subtext(item["metric"], item["stat"])
-      curr = markdown_formatter.format_float(item["current"])
+      curr = markdown_formatter.format_float(item["current"], unit=unit)
       if item.get("has_comparison", True) and item["baseline"] is not None:
         rows.append([
           name,
           curr,
-          markdown_formatter.format_float(item["baseline"]),
+          markdown_formatter.format_float(item["baseline"], unit=unit),
           markdown_formatter.format_percent(item["threshold"]),
           markdown_formatter.format_status(item["is_regression"]),
         ])

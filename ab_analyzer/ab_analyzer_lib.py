@@ -179,6 +179,7 @@ def _format_ab_metric_row(
   threshold: float,
   direction: metric_pb2.ImprovementDirection,
   is_reg: bool,
+  unit: str = "",
 ) -> list[str]:
   """Formats a single A/B metric comparison row.
 
@@ -190,6 +191,7 @@ def _format_ab_metric_row(
       threshold: Regression threshold.
       direction: Improvement direction.
       is_reg: Boolean indicating if metric comparison is a regression.
+      unit: Optional unit string (e.g. 'ms', 's').
 
   Returns:
       A list of formatted cell strings for the Markdown table row.
@@ -200,7 +202,7 @@ def _format_ab_metric_row(
   if exp_val is None:
     return [
       name,
-      markdown_formatter.format_float(base_val),
+      markdown_formatter.format_float(base_val, unit=unit),
       "-",
       "N/A",
       th_str,
@@ -210,7 +212,7 @@ def _format_ab_metric_row(
     return [
       name,
       "-",
-      markdown_formatter.format_float(exp_val),
+      markdown_formatter.format_float(exp_val, unit=unit),
       "N/A",
       th_str,
       markdown_formatter.format_status(None, missing_base=True),
@@ -218,8 +220,8 @@ def _format_ab_metric_row(
   if base_val == 0:
     return [
       name,
-      "0",
-      markdown_formatter.format_float(exp_val),
+      f"0 {unit}".strip(),
+      markdown_formatter.format_float(exp_val, unit=unit),
       "0.00%" if exp_val == 0 else "∞",
       th_str,
       markdown_formatter.format_status(
@@ -230,8 +232,8 @@ def _format_ab_metric_row(
   delta = (exp_val - base_val) / base_val
   return [
     name,
-    markdown_formatter.format_float(base_val),
-    markdown_formatter.format_float(exp_val),
+    markdown_formatter.format_float(base_val, unit=unit),
+    markdown_formatter.format_float(exp_val, unit=unit),
     markdown_formatter.format_percent(delta, precision=2, signed=True),
     th_str,
     markdown_formatter.format_status(is_reg),
@@ -289,15 +291,19 @@ def generate_report(
       )
       continue
 
-    b_stats = {(s.metric_name, s.stat): s.value.value for s in base_res.stats}
-    e_stats = {(s.metric_name, s.stat): s.value.value for s in exp_res.stats}
+    b_stats = {(s.metric_name, s.stat): (s.value.value, s.unit) for s in base_res.stats}
+    e_stats = {(s.metric_name, s.stat): (s.value.value, s.unit) for s in exp_res.stats}
 
     rows = []
     for metric_name, stat in sorted(set(b_stats.keys()) | set(e_stats.keys())):
-      base_val, exp_val = (
-        b_stats.get((metric_name, stat)),
-        e_stats.get((metric_name, stat)),
+      base_info = b_stats.get((metric_name, stat))
+      exp_info = e_stats.get((metric_name, stat))
+      base_val = base_info[0] if base_info else None
+      exp_val = exp_info[0] if exp_info else None
+      unit = (
+        (exp_info[1] if exp_info else None) or (base_info[1] if base_info else "") or ""
       )
+
       thresh, direction = _get_comparison_config(
         matrix_map, config_id, metric_name, stat
       )
@@ -308,7 +314,7 @@ def generate_report(
 
       rows.append(
         _format_ab_metric_row(
-          metric_name, stat, base_val, exp_val, thresh, direction, is_reg
+          metric_name, stat, base_val, exp_val, thresh, direction, is_reg, unit=unit
         )
       )
 

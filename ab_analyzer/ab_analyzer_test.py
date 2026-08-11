@@ -321,5 +321,46 @@ def test_missing_experiment_stat():
   assert "🔴 MISSING" in report
 
 
+def test_generate_report_renders_units():
+  """Test that units from ComputedStat are rendered with the baseline and experiment values."""
+  base = benchmark_result_pb2.BenchmarkResult(
+    config_id="test",
+    stats=[
+      benchmark_result_pb2.ComputedStat(
+        metric_name="latency",
+        stat=metric_pb2.Stat.MEAN,
+        value=wrappers_pb2.DoubleValue(value=100.0),
+        unit="ms",
+      )
+    ],
+  )
+  exp = benchmark_result_pb2.BenchmarkResult(
+    config_id="test",
+    stats=[
+      benchmark_result_pb2.ComputedStat(
+        metric_name="latency",
+        stat=metric_pb2.Stat.MEAN,
+        value=wrappers_pb2.DoubleValue(value=95.0),
+        unit="ms",
+      )
+    ],
+  )
+  results = {
+    "test": {
+      benchmark_job_pb2.AbTestGroup.BASELINE: base,
+      benchmark_job_pb2.AbTestGroup.EXPERIMENT: exp,
+    }
+  }
+
+  report, success = ab_analyzer_lib.generate_report(
+    results, {}, "http://repo", "TestFlow"
+  )
+
+  assert success
+  assert "100.0000 ms" in report
+  assert "95.0000 ms" in report
+  assert "latency <small>(MEAN)</small>" in report
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main(sys.argv))

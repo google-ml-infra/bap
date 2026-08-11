@@ -31,17 +31,21 @@ def format_with_subtext(text: str, subtext: str) -> str:
   return f"{text} <small>({subtext})</small>"
 
 
-def format_float(val: float | None, precision: int = 4) -> str:
+def format_float(val: float | None, precision: int = 4, unit: str = "") -> str:
   """Formats a float to a specified decimal precision, or '-' if None.
 
   Args:
       val: Floating-point value to format, or None.
       precision: Number of decimal places to include.
+      unit: Optional unit string to append (e.g., 'ms', 's').
 
   Returns:
-      Formatted float string or '-' if None.
+      Formatted float string with unit or '-' if None.
   """
-  return "-" if val is None else f"{val:.{precision}f}"
+  if val is None:
+    return "-"
+  formatted = f"{val:.{precision}f}"
+  return f"{formatted} {unit}".strip()
 
 
 def format_percent(val: float | None, precision: int = 0, signed: bool = False) -> str:
