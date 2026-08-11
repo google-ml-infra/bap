@@ -257,6 +257,8 @@ def test_generate_report_section_success():
   assert success
   assert "### test_config" in report_md
   assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "105.0000 ms" in report_md
+  assert "100.0000 ms" in report_md
   assert "🟢 PASS" in report_md
 
 
@@ -285,6 +287,8 @@ def test_generate_report_section_failure():
   assert not success
   assert "### test_config" in report_md
   assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "150.0000 ms" in report_md
+  assert "100.0000 ms" in report_md
   assert "🔴 REGRESSION" in report_md
 
 
@@ -304,6 +308,7 @@ def test_generate_report_section_info_row():
   assert success
   assert "### test_config" in report_md
   assert "wall_time <small>(MEAN)</small>" in report_md
+  assert "150.0000 ms" in report_md
   assert "ℹ️ INFO" in report_md
 
 

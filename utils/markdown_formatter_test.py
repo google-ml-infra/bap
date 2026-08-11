@@ -28,8 +28,10 @@ def test_format_with_subtext():
 
 def test_format_float():
   assert markdown_formatter.format_float(None) == "-"
+  assert markdown_formatter.format_float(None, unit="ms") == "-"
   assert markdown_formatter.format_float(12.34567) == "12.3457"
   assert markdown_formatter.format_float(12.34567, precision=2) == "12.35"
+  assert markdown_formatter.format_float(12.34567, unit="ms") == "12.3457 ms"
 
 
 def test_format_percent():
