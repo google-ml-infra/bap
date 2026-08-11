@@ -23,7 +23,18 @@ BAP provides various capabilities for performance management:
 -   **A/B Testing**: A dedicated mode for head-to-head performance comparisons
     in presubmit to isolate noise and detect regressions accurately.
 -   **Downstream Consumer Integration**: Publishes results via Pub/Sub to
-    for consumption.
+    supported consumers, including **Data Studio** (*Available Q3 2026*) for public dashboards.
+
+## Users
+
+BAP is currently trusted by core ML frameworks to automate their OSS performance benchmarks.
+
+<p>BAP supports benchmarking for the following public repositories:</p>
+<ul>
+  <li><a href="https://github.com/openxla/xla">openxla/xla</a></li>
+  <li><a href="https://github.com/openxla/tokamax">openxla/tokamax</a></li>
+  <li><a href="https://github.com/google/tpu-raiden">google/tpu-raiden</a></li>
+</ul>
 
 ## Getting Started
 
