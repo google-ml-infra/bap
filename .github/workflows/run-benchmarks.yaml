@@ -213,6 +213,8 @@ jobs:
           INPUT_EXPERIMENT: ${{ inputs.experiment_ref }}
           IS_PR: ${{ github.event_name == 'pull_request' }}
           PR_BASE: ${{ github.base_ref }}
+          PR_HEAD: ${{ github.head_ref }}
+          REF_NAME: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           # If we are in the bap repo itself, use the current SHA.
           # Otherwise, prefer bap_ref, then default to main.
@@ -226,11 +228,12 @@ jobs:
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
           # Resolve experiment ref.
-          # Default to current SHA if not provided.
-          if [[ -z "$INPUT_EXPERIMENT" ]]; then
-            EXPERIMENT_REF="$SHA"
-          else
+          if [[ -n "$INPUT_EXPERIMENT" ]]; then
             EXPERIMENT_REF="$INPUT_EXPERIMENT"
+          elif [[ "$IS_PR" == "true" ]]; then
+            EXPERIMENT_REF="$PR_HEAD"
+          else
+            EXPERIMENT_REF="$REF_NAME"
           fi
 
           # Resolve baseline ref.
@@ -426,12 +429,23 @@ jobs:
 
       - name: Execute workload (baseline)
         id: baseline
+        if: ${{ matrix.ab_test_group == 'COLOCATED' }}
         uses: ./ml_actions/actions/execute_benchmark
         with:
-          # For A/B Colocated mode, use baseline_ref. For standard A/B, use checkout_ref. Otherwise fall back to SHA.
-          checkout_ref: ${{ matrix.baseline_ref || matrix.checkout_ref || github.sha }}
-          # In A/B Colocated mode, this first run is the BASELINE.
-          artifact_suffix: ${{ matrix.ab_test_group == 'COLOCATED' && '-BASELINE' || (matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '') }}
+          checkout_ref: ${{ matrix.baseline_ref }}
+          artifact_suffix: "-BASELINE"
+          matrix: ${{ toJson(matrix) }}
+          job_id: ${{ needs.generate_matrix.outputs.job_id }}
+          custom_metadata: ${{ inputs.custom_metadata }}
+          results_dir: "${{ github.workspace }}/results_baseline"
+
+      - name: Execute workload${{ matrix.ab_test_group == 'COLOCATED' && ' (experiment)' || (matrix.ab_test_group && format(' ({0})', matrix.ab_test_group) || '') }}
+        id: experiment
+        if: ${{ always() && !cancelled() }}
+        uses: ./ml_actions/actions/execute_benchmark
+        with:
+          checkout_ref: ${{ matrix.ab_test_group == 'COLOCATED' && matrix.experiment_ref || matrix.checkout_ref }}
+          artifact_suffix: ${{ matrix.ab_test_group == 'COLOCATED' && '-EXPERIMENT' || (matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '') }}
           matrix: ${{ toJson(matrix) }}
           job_id: ${{ needs.generate_matrix.outputs.job_id }}
           custom_metadata: ${{ inputs.custom_metadata }}
@@ -442,7 +456,6 @@ jobs:
         env:
           PROJECT_ID: ${{ inputs.pub_sub_gcp_project_id }}
           TOPIC_ID: ${{ inputs.pub_sub_gcp_topic_id }}
-          # Path determined by results_dir input in baseline call
           BENCHMARK_RESULTS_DIR: "${{ github.workspace }}/results"
           USER_REPO: ${{ github.repository }}
         shell: bash
@@ -462,18 +475,6 @@ jobs:
             --repo_name="$USER_REPO"
 
           echo "::endgroup::"
-
-      - name: Execute workload (experiment)
-        id: experiment
-        if: ${{ always() && matrix.ab_test_group == 'COLOCATED' }}
-        uses: ./ml_actions/actions/execute_benchmark
-        with:
-          checkout_ref: ${{ matrix.experiment_ref }}
-          artifact_suffix: "-EXPERIMENT"
-          matrix: ${{ toJson(matrix) }}
-          job_id: ${{ needs.generate_matrix.outputs.job_id }}
-          custom_metadata: ${{ inputs.custom_metadata }}
-          results_dir: "${{ github.workspace }}/results_experiment"
 
   analyze_results:
     name: Analyze results
