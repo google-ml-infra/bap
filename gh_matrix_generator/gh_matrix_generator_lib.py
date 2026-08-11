@@ -243,6 +243,7 @@ class MatrixGenerator:
             jobs_to_emit.append(experiment_job)
         else:
           # Standard mode (single job)
+          base_job.checkout_ref = experiment_ref
           jobs_to_emit.append(base_job)
 
         # Validate and append

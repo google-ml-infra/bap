@@ -245,6 +245,22 @@ def test_generate_matrix_content_correctness():
   assert action_inputs["runtime_flags_hw"] == "--precision=fp32"
 
 
+def test_generate_matrix_standard_mode_with_experiment_ref():
+  """Tests that passing experiment_ref in standard mode sets checkout_ref."""
+  suite = text_format.Parse(VALID_SUITE_PBTXT, benchmark_registry_pb2.BenchmarkSuite())
+  generator = gh_matrix_generator_lib.MatrixGenerator()
+  matrix = generator.generate(
+    suite,
+    github_event="push",
+    tag_filter=["cpu"],
+    ab_mode=False,
+    experiment_ref="main",
+  )
+  cpu_entry = next(item for item in matrix if item["benchmark_name"] == "cpu_benchmark")
+  assert "ab_test_group" not in cpu_entry
+  assert cpu_entry["checkout_ref"] == "main"
+
+
 # --- Tests for A/B Testing Logic ---
 
 
