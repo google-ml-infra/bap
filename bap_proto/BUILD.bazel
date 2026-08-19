@@ -37,7 +37,8 @@ proto_library(
         "@protobuf//:wrappers_proto",
         "@protobuf//:timestamp_proto",
         "//bap_proto/common:metric_proto",
-        "//bap_proto/common:workflow_type_proto"
+        "//bap_proto/common:workflow_type_proto",
+        "//bap_proto/common:run_status_proto",
     ],
 )
 

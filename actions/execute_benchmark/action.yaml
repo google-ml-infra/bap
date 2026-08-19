@@ -68,6 +68,7 @@ runs:
         echo "::endgroup::"
 
     - name: Execute workload
+      id: execute_workload
       uses: ./ml_actions/actions/dynamic_action_executor
       with:
         action: ${{ fromJson(inputs.matrix).workload.action }}
@@ -85,6 +86,7 @@ runs:
 
     - name: Parse TB event files
       id: parse_tb_logs
+      if: ${{ always() && !cancelled() }}
       working-directory: ml_actions
       shell: bash
       env:
@@ -95,6 +97,7 @@ runs:
         STATIC_METADATA_JSON: '${{ toJson(fromJson(inputs.matrix).metadata) }}'
         CUSTOM_METADATA_JSON: '${{ inputs.custom_metadata }}'
         WORKFLOW_TYPE: ${{ fromJson(inputs.matrix).workflow_type }}
+        RUN_STATUS: ${{ steps.execute_workload.outcome == 'success' && 'SUCCESS' || 'FAILURE' }}
         RUNNER_LABEL: ${{ fromJson(inputs.matrix).environment_config.runner_label }}
         RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         COMMIT_SHA: ${{ steps.commit_info.outputs.sha }}
@@ -121,6 +124,7 @@ runs:
           --commit_sha="$COMMIT_SHA" \
           --github_run_id="$GITHUB_RUN_ID" \
           --workflow_type="$WORKFLOW_TYPE" \
+          --run_status="$RUN_STATUS" \
           --runner_label="$RUNNER_LABEL" \
           --branch="$BRANCH" \
           --run_url="$RUN_URL" \
@@ -132,6 +136,7 @@ runs:
         echo "::endgroup::"
 
     - name: Upload benchmark result
+      if: ${{ always() && !cancelled() }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
       with:
         # Format: shard-benchmark-result-{CONFIG}[-{SUFFIX}]-{JOB_ID}

@@ -241,5 +241,16 @@ def test_parse_and_compute_regex_expansion(mock_event_accumulator):
   assert results[1].value.value == 10.0
 
 
+def test_parse_and_compute_missing_logs_allowed(mock_event_accumulator, capsys):
+  """Tests that missing or invalid logs return empty results when allow_missing_logs=True."""
+  mock_event_accumulator.Reload.side_effect = Exception("No logs found")
+  specs = _create_metric_specs("wall_time", "ms", [metric_pb2.Stat.MEAN])
+  parser = tb_parser_lib.TensorBoardParser(specs)
+  results = parser.parse_and_compute("fake_dir", allow_missing_logs=True)
+  assert results == []
+  captured = capsys.readouterr()
+  assert "Warning: Failed to load logs" in captured.err
+
+
 if __name__ == "__main__":
   sys.exit(pytest.main(sys.argv))

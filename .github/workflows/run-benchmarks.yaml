@@ -452,7 +452,7 @@ jobs:
           results_dir: "${{ github.workspace }}/results"
 
       - name: Publish results to Pub/Sub
-        if: ${{ success() && inputs.publish_metrics && !inputs.ab_mode }}
+        if: ${{ always() && !cancelled() && inputs.publish_metrics && !inputs.ab_mode }}
         env:
           PROJECT_ID: ${{ inputs.pub_sub_gcp_project_id }}
           TOPIC_ID: ${{ inputs.pub_sub_gcp_topic_id }}
