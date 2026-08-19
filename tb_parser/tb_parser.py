@@ -92,6 +92,12 @@ def main():
     required=False,
     help="Directory containing dynamic metadata JSON files from the workload.",
   )
+  parser.add_argument(
+    "--run_status",
+    required=False,
+    default="SUCCESS",
+    help="Run status of the workload (e.g. SUCCESS or FAILURE).",
+  )
 
   args = parser.parse_args()
 
@@ -102,7 +108,10 @@ def main():
     sys.exit(1)
 
   tb_parser = tb_parser_lib.TensorBoardParser(metric_specs)
-  computed_stats = tb_parser.parse_and_compute(args.tblog_dir)
+  allow_missing_logs = args.run_status != "SUCCESS"
+  computed_stats = tb_parser.parse_and_compute(
+    args.tblog_dir, allow_missing_logs=allow_missing_logs
+  )
 
   # Merge metadata with the following priority (highest to lowest):
   # 1. Dynamic metadata (emitted by workload at runtime)
@@ -144,6 +153,7 @@ def main():
     stats=computed_stats,
     github_run_id=int(args.github_run_id),
     workflow_type=args.workflow_type,
+    run_status=args.run_status,
     runner_label=args.runner_label,
     branch=args.branch,
     run_url=args.run_url,

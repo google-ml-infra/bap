@@ -21,6 +21,7 @@ import "google/protobuf/wrappers.proto";
 import "buf/validate/validate.proto";
 import "bap_proto/common/metric.proto";
 import "bap_proto/common/workflow_type.proto";
+import "bap_proto/common/run_status.proto";
 
 // A single computed statistic from a metric's raw data.
 message ComputedStat {
@@ -76,4 +77,7 @@ message BenchmarkResult {
 
   // Optional: Map of optional metadata
   map<string, string> metadata = 12;
+
+  // REQUIRED: The run status of the benchmark (e.g. "SUCCESS", "FAILURE").
+  bap.common.RunStatus run_status = 13 [(buf.validate.field).enum = { not_in: [0]}];
 }

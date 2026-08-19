@@ -67,3 +67,13 @@ py_proto_library(
     name = "environment_config_py_proto",
     deps = [":environment_config_proto"],
 )
+
+proto_library(
+    name = "run_status_proto",
+    srcs = ["run_status.proto"],
+)
+
+py_proto_library(
+    name = "run_status_py_proto",
+    deps = [":run_status_proto"],
+)

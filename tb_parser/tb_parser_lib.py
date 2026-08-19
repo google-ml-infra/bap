@@ -63,7 +63,9 @@ class TensorBoardParser:
     """
     self.metric_specs = metric_specs
 
-  def _read_tensorboard_metrics(self, tblog_dir: str) -> Mapping[str, Sequence[float]]:
+  def _read_tensorboard_metrics(
+    self, tblog_dir: str, allow_missing_logs: bool = False
+  ) -> Mapping[str, Sequence[float]]:
     """Reads scalar data for tracked metrics from both V1 and V2 buckets.
 
     We explicitly check both 'scalars' and 'tensors' buckets because:
@@ -79,6 +81,12 @@ class TensorBoardParser:
       )
       accumulator.Reload()
     except Exception as e:
+      if allow_missing_logs:
+        print(
+          f"Warning: Failed to load logs from '{tblog_dir}' for failed run. Error: {e}",
+          file=sys.stderr,
+        )
+        return {}
       print(
         f"Error: EventAccumulator failed to load logs from '{tblog_dir}'. "
         f"Are event files present and valid? Error: {e}",
@@ -122,10 +130,12 @@ class TensorBoardParser:
     return raw_data
 
   def parse_and_compute(
-    self, tblog_dir: str
+    self, tblog_dir: str, allow_missing_logs: bool = False
   ) -> Sequence[benchmark_result_pb2.ComputedStat]:
     """Reads event logs, computes stats, and returns a list of ComputedStat messages."""
-    raw_data = self._read_tensorboard_metrics(tblog_dir)
+    raw_data = self._read_tensorboard_metrics(
+      tblog_dir, allow_missing_logs=allow_missing_logs
+    )
     computed_stats = []
     all_resolved_tags = set(raw_data.keys())
 
