@@ -128,8 +128,8 @@ class MatrixGenerator:
         matching configuration. Defaults to False.
       baseline_ref: The git ref (branch/SHA) to check out for the baseline group.
         Only used if ab_mode is True. Defaults to empty string.
-      experiment_ref: The git ref (branch/SHA) to check out for the experiment group.
-        Only used if ab_mode is True. Defaults to empty string.
+      experiment_ref: The git ref (branch/SHA) to check out for the experiment group
+        or standard execution checkout. Defaults to empty string.
 
     Returns:
       A sequence of dictionaries, where each dictionary represents a validated

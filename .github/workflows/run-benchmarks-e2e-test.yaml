@@ -29,6 +29,11 @@ on:
       - '.github/workflows/run-benchmarks.yaml'
   workflow_dispatch:
     inputs:
+      experiment_ref:
+        description: "Git ref (SHA, branch, or tag) of the user repository to run benchmarks against."
+        required: false
+        type: string
+        default: ""
       custom_metadata:
         description: "JSON string of metadata to append (e.g., for MLCompass tracking)"
         required: false
@@ -58,6 +63,7 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      experiment_ref: ${{ inputs.experiment_ref }}
       job_id: "e2e_standard"
       registry_file: "e2e_test/test_registry.pbtxt"
       tag_filter: "e2e-test"
@@ -73,6 +79,7 @@ jobs:
       pull-requests: write 
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      experiment_ref: ${{ inputs.experiment_ref }}
       job_id: "e2e_ab"
       registry_file: "e2e_test/test_registry.pbtxt"
       benchmark_filter: "e2e_bazel_benchmark"
@@ -87,6 +94,7 @@ jobs:
       pull-requests: write
     uses: ./.github/workflows/run-benchmarks.yaml
     with:
+      experiment_ref: ${{ inputs.experiment_ref }}
       job_id: "e2e_custom_env"
       registry_file: "e2e_test/test_registry.pbtxt"
       benchmark_filter: "e2e_python_benchmark_summary_v2"

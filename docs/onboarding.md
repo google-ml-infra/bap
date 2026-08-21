@@ -71,10 +71,10 @@ The reusable workflow supports the following inputs:
 | `benchmark_filter` | No | `""` | Regex to filter by benchmark name (e.g. `resnet.*`). |
 | `environment_filter` | No | `""` | Regex to filter by environment configuration ID (e.g. `a100.*`). |
 | `tag_filter` | No | `""` | Space-separated list of tags. Benchmarks and/or environment configs must match at least one (e.g. `gpu`). |
-| `bap_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/actions to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/bap/.github/workflows/run_benchmarks.yml@v1.5.0"). |
+| `bap_ref` | No | `main` | The branch, tag, or SHA of google-ml-infra/bap to use. For production, use the same stable tag or SHA that's used to pin the reusable workflow file version (e.g. "v1.5.0" for "google-ml-infra/bap/.github/workflows/run-benchmarks.yaml@v1.5.0"). |
 | `job_id` | No | Random | A unique identifier for the top-level job (e.g. `e2e-test`). Used to namespace artifacts. If empty, a random ID is generated. |
 | `ab_mode` | No | `false` | If `true`, runs A/B comparison (baseline vs experiment) and generates an A/B report. |
-| `experiment_ref` | No | Current SHA | Git ref for the experiment in A/B mode. Defaults to the current commit SHA. |
+| `experiment_ref` | No | Current SHA / PR head | The git ref (SHA, branch, tag) of the user repository to benchmark, or the candidate ref in A/B mode. Defaults to current commit/branch. Useful when invoking against a specific commit. |
 | `baseline_ref` | No | PR Base or main | Git ref for the baseline in A/B mode. Defaults to PR base or main. |
 | `post_pr_comment` | No | `false` | If `true`, posts the benchmark report as a sticky comment on the PR. |
 | `publish_metrics` | No | `false` | If `true`, publishes benchmark results to Google Cloud Pub/Sub. |
@@ -82,6 +82,7 @@ The reusable workflow supports the following inputs:
 | `pub_sub_gcp_topic_id` | No | `public-results-prod` | Pub/Sub topic ID to publish results to. |
 | `runner` | No | `linux-x86-n2-16` | The runner label to use for standard jobs. |
 | `custom_env_vars` | No | `""` | Multi-line string of environment variables to inject into the runner environment (formatted like a `.env` file). |
+| `custom_metadata` | No | `{}` | JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload. |
 
 ### Workflow Outputs
 
