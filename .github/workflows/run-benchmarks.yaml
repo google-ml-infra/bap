@@ -74,7 +74,7 @@ on:
         type: boolean
         default: false
       experiment_ref:
-        description: "Git ref for the experiment in A/B mode. Defaults to current commit SHA."
+        description: "Git ref (SHA, branch, tag) of the user repository to benchmark, or the experiment ref in A/B mode. Defaults to current commit/branch."
         required: false
         type: string
         default: ""
@@ -129,7 +129,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.experiment_ref || github.sha }}
           path: user_repo
           persist-credentials: false
 
@@ -180,7 +180,7 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
-          ref: ${{ github.sha }}
+          ref: ${{ inputs.experiment_ref || github.sha }}
           path: user_repo
           persist-credentials: false
 
@@ -236,7 +236,7 @@ jobs:
             EXPERIMENT_REF="$REF_NAME"
           fi
 
-          # Resolve baseline ref.
+          # Resolve baseline ref for A/B mode.
           # Priority order:
           # 1. Manual input (if provided by user)
           # 2. PR base (if triggered by a PR)
@@ -250,8 +250,10 @@ jobs:
           fi
 
           echo "Resolved git refs: baseline=$BASELINE_REF, experiment=$EXPERIMENT_REF"
-          echo "baseline_ref=$BASELINE_REF" >> "$GITHUB_OUTPUT"
-          echo "experiment_ref=$EXPERIMENT_REF" >> "$GITHUB_OUTPUT"
+          {
+            echo "baseline_ref=$BASELINE_REF"
+            echo "experiment_ref=$EXPERIMENT_REF"
+          } >> "$GITHUB_OUTPUT"
           echo "::endgroup::"
 
       - name: Check out ML actions repo
