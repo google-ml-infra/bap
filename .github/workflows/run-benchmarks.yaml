@@ -108,6 +108,16 @@ on:
         required: false
         type: string
         default: "{}"
+      multi_host:
+        description: "If true, isolates workspace writes into a unique folder per job on the shared multi-host volume."
+        required: false
+        type: boolean
+        default: false
+      multi_host_shared_dir:
+        description: "Path to the shared GCS volume mounted across multi-host runners."
+        required: false
+        type: string
+        default: "/tmp/bap-ml-actions-ci"
 
     outputs:
       job_id:
@@ -125,7 +135,7 @@ jobs:
     container:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:fa95dacafd53199ab68e3c28c488c0cc0d5fad3a4b0ac20af27f2bd0a061a55d # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     steps:
-      - name: Check out user repo
+      - name: Checkout user repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
@@ -143,7 +153,7 @@ jobs:
         run: |
           echo "bap_ref=$BAP_REF" >> "$GITHUB_OUTPUT"
 
-      - name: Check out BAP repo
+      - name: Checkout BAP repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
@@ -176,7 +186,7 @@ jobs:
       bap_ref: ${{ steps.resolve_refs.outputs.bap_ref }}
       job_id: ${{ steps.gen_job_id.outputs.job_id }}
     steps:
-      - name: Check out user repo
+      - name: Checkout user repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: ${{ github.repository }}
@@ -256,7 +266,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
           echo "::endgroup::"
 
-      - name: Check out ML actions repo
+      - name: Checkout BAP repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
@@ -342,38 +352,57 @@ jobs:
       image: ${{ matrix.environment_config.container_image }}
 
     steps:
-      - name: Check out ML actions repo
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
-        with:
-          repository: "google-ml-infra/bap"
-          ref: ${{ needs.generate_matrix.outputs.bap_ref }}
-          path: ml_actions
-          persist-credentials: false
-
       - name: Set up benchmark environment
         shell: bash
         env:
           CUSTOM_ENV_VARS: ${{ inputs.custom_env_vars }}
+          MULTI_HOST: ${{ inputs.multi_host }}
+          MULTI_HOST_SHARED_DIR: ${{ inputs.multi_host_shared_dir }}
+          JOB_ID: ${{ needs.generate_matrix.outputs.job_id }}
+          CONFIG_ID: ${{ matrix.config_id }}
+          AB_GROUP: ${{ matrix.ab_test_group || '' }}
         run: |
           echo "::group::Set up benchmark environment"
           set -euo pipefail
 
-          # Create TensorBoard output dir, workload artifacts dir, and metadata dir.
-          TENSORBOARD_OUTPUT_DIR="$GITHUB_WORKSPACE/tblogs"
-          WORKLOAD_ARTIFACTS_DIR="$GITHUB_WORKSPACE/artifacts"
-          WORKLOAD_METADATA_DIR="$GITHUB_WORKSPACE/metadata"
-          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+          INDEX="${JOB_COMPLETION_INDEX:-0}"
+          if [[ "$INDEX" == "0" ]]; then
+            IS_PRIMARY="true"
+          else
+            IS_PRIMARY="false"
+          fi
 
-          echo "TENSORBOARD_OUTPUT_DIR: $TENSORBOARD_OUTPUT_DIR"
-          echo "WORKLOAD_ARTIFACTS_DIR: $WORKLOAD_ARTIFACTS_DIR"
-          echo "WORKLOAD_METADATA_DIR: $WORKLOAD_METADATA_DIR"
+          if [[ "$MULTI_HOST" == "true" ]]; then
+            # Construct unique job folder inside the shared GCS mount.
+            JOB_DIR="${JOB_ID}/${CONFIG_ID}"
+            if [[ -n "$AB_GROUP" ]]; then
+              JOB_DIR="${JOB_DIR}_${AB_GROUP}"
+            fi
+            JOB_WORKSPACE="$MULTI_HOST_SHARED_DIR/$JOB_DIR"
+            mkdir -p "$JOB_WORKSPACE" "$GITHUB_WORKSPACE/$JOB_ID"
+            ln -sfn "$JOB_WORKSPACE" "$GITHUB_WORKSPACE/$JOB_DIR"
+          else
+            JOB_DIR=""
+            JOB_WORKSPACE="$GITHUB_WORKSPACE"
+          fi
 
-          # Export created dirs to GITHUB_ENV.
+          TENSORBOARD_OUTPUT_DIR="$JOB_WORKSPACE/tblogs"
+          WORKLOAD_ARTIFACTS_DIR="$JOB_WORKSPACE/artifacts"
+          WORKLOAD_METADATA_DIR="$JOB_WORKSPACE/metadata"
+          BENCHMARK_RESULTS_DIR="$JOB_WORKSPACE/results"
+          BENCHMARK_RESULTS_DIR_BASELINE="$JOB_WORKSPACE/results_baseline"
+          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR" "$BENCHMARK_RESULTS_DIR" "$BENCHMARK_RESULTS_DIR_BASELINE"
+
+          # Export created dirs to GITHUB_ENV and log to stdout.
           {
+            echo "IS_PRIMARY=$IS_PRIMARY"
+            echo "JOB_DIR=$JOB_DIR"
             echo "TENSORBOARD_OUTPUT_DIR=$TENSORBOARD_OUTPUT_DIR"
             echo "WORKLOAD_ARTIFACTS_DIR=$WORKLOAD_ARTIFACTS_DIR"
             echo "WORKLOAD_METADATA_DIR=$WORKLOAD_METADATA_DIR"
-          } >> "$GITHUB_ENV"
+            echo "BENCHMARK_RESULTS_DIR=$BENCHMARK_RESULTS_DIR"
+            echo "BENCHMARK_RESULTS_DIR_BASELINE=$BENCHMARK_RESULTS_DIR_BASELINE"
+          } | tee -a "$GITHUB_ENV"
 
           # Inject custom environment variables if provided.
           if [[ -n "$CUSTOM_ENV_VARS" ]]; then
@@ -429,6 +458,22 @@ jobs:
 
           echo "::endgroup::"
 
+      - name: Checkout BAP repo
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
+        with:
+          repository: "google-ml-infra/bap"
+          ref: ${{ needs.generate_matrix.outputs.bap_ref }}
+          path: ${{ inputs.multi_host && format('{0}/ml_actions', env.JOB_DIR) || 'ml_actions' }}
+          persist-credentials: false
+
+      - name: Link BAP repo
+        if: ${{ inputs.multi_host }}
+        shell: bash
+        env:
+          JOB_DIR: ${{ env.JOB_DIR }}
+        run: |
+          ln -sfn "$JOB_DIR/ml_actions" ml_actions
+
       - name: Execute workload (baseline)
         id: baseline
         if: ${{ matrix.ab_test_group == 'COLOCATED' }}
@@ -439,7 +484,11 @@ jobs:
           matrix: ${{ toJson(matrix) }}
           job_id: ${{ needs.generate_matrix.outputs.job_id }}
           custom_metadata: ${{ inputs.custom_metadata }}
-          results_dir: "${{ github.workspace }}/results_baseline"
+          results_dir: ${{ env.BENCHMARK_RESULTS_DIR_BASELINE }}
+          multi_host: ${{ inputs.multi_host }}
+          job_dir: ${{ env.JOB_DIR }}
+          multi_host_shared_dir: ${{ inputs.multi_host_shared_dir }}
+          is_primary: ${{ env.IS_PRIMARY }}
 
       - name: Execute workload${{ matrix.ab_test_group == 'COLOCATED' && ' (experiment)' || (matrix.ab_test_group && format(' ({0})', matrix.ab_test_group) || '') }}
         id: experiment
@@ -451,14 +500,18 @@ jobs:
           matrix: ${{ toJson(matrix) }}
           job_id: ${{ needs.generate_matrix.outputs.job_id }}
           custom_metadata: ${{ inputs.custom_metadata }}
-          results_dir: "${{ github.workspace }}/results"
+          results_dir: ${{ env.BENCHMARK_RESULTS_DIR }}
+          multi_host: ${{ inputs.multi_host }}
+          job_dir: ${{ env.JOB_DIR }}
+          multi_host_shared_dir: ${{ inputs.multi_host_shared_dir }}
+          is_primary: ${{ env.IS_PRIMARY }}
 
       - name: Publish results to Pub/Sub
-        if: ${{ always() && !cancelled() && inputs.publish_metrics && !inputs.ab_mode }}
+        if: ${{ always() && !cancelled() && inputs.publish_metrics && !inputs.ab_mode && env.IS_PRIMARY == 'true' }}
         env:
           PROJECT_ID: ${{ inputs.pub_sub_gcp_project_id }}
           TOPIC_ID: ${{ inputs.pub_sub_gcp_topic_id }}
-          BENCHMARK_RESULTS_DIR: "${{ github.workspace }}/results"
+          BENCHMARK_RESULTS_DIR: ${{ env.BENCHMARK_RESULTS_DIR }}
           USER_REPO: ${{ github.repository }}
         shell: bash
         working-directory: ml_actions
@@ -478,6 +531,27 @@ jobs:
 
           echo "::endgroup::"
 
+      - name: Cleanup job workspace
+        if: ${{ always() }}
+        shell: bash
+        env:
+          MULTI_HOST: ${{ inputs.multi_host }}
+          MULTI_HOST_SHARED_DIR: ${{ inputs.multi_host_shared_dir }}
+          JOB_DIR: ${{ env.JOB_DIR }}
+          IS_PRIMARY: ${{ env.IS_PRIMARY }}
+        run: |
+          echo "::group::Cleanup job workspace"
+          set -euo pipefail
+          if [[ "$MULTI_HOST" == "true" && -n "$JOB_DIR" ]]; then
+            rm -f ml_actions
+            rm -rf "$GITHUB_WORKSPACE/$JOB_DIR"
+            if [[ "$IS_PRIMARY" == "true" ]]; then
+              echo "Cleaning up multi-host job directory: $MULTI_HOST_SHARED_DIR/$JOB_DIR"
+              rm -rf "$MULTI_HOST_SHARED_DIR/$JOB_DIR"
+            fi
+          fi
+          echo "::endgroup::"
+
   analyze_results:
     name: Analyze results
     needs: [generate_matrix, run_benchmarks]
@@ -486,7 +560,7 @@ jobs:
       image: us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest@sha256:9fded8d1413cabb6ef043611cbe446471e842a429e100d96d4ea183f2821e270 # ratchet:us-docker.pkg.dev/ml-oss-artifacts-published/ml-public-container/ml-build:latest
     if: always() && !cancelled()
     steps:
-      - name: Check out ML actions repo
+      - name: Checkout BAP repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"
@@ -592,7 +666,7 @@ jobs:
     if: ${{ always() }}
 
     steps:
-      - name: Check out ML actions repo
+      - name: Checkout BAP repo
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
         with:
           repository: "google-ml-infra/bap"

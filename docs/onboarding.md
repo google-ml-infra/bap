@@ -83,6 +83,8 @@ The reusable workflow supports the following inputs:
 | `runner` | No | `linux-x86-n2-16` | The runner label to use for standard jobs. |
 | `custom_env_vars` | No | `""` | Multi-line string of environment variables to inject into the runner environment (formatted like a `.env` file). |
 | `custom_metadata` | No | `{}` | JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload. |
+| `multi_host` | No | `false` | If `true`, isolates workspace writes into a unique folder per job to allow concurrent multi-host runs on shared GCS volumes. |
+| `multi_host_shared_dir` | No | `/tmp/bap-ml-actions-ci` | Path to the shared GCS volume mounted across multi-host runners. |
 
 ### Workflow Outputs
 

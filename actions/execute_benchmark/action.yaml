@@ -37,6 +37,22 @@ inputs:
     description: "The absolute path to the directory to store parsed benchmark results."
     required: false
     default: "${{ github.workspace }}/results"
+  multi_host:
+    description: "If true, isolates workspace writes into a unique job folder for multi-host runner support."
+    required: false
+    default: "false"
+  job_dir:
+    description: "The unique subdirectory within github.workspace to isolate this job's writes."
+    required: false
+    default: ""
+  multi_host_shared_dir:
+    description: "Path to the shared GCS volume mounted across multi-host runners."
+    required: false
+    default: "/tmp/bap-ml-actions-ci"
+  is_primary:
+    description: "Whether this runner is the primary node (rank 0) in a multi-node setup."
+    required: false
+    default: "true"
 
 outputs:
   benchmark_result_file:
@@ -46,18 +62,18 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - name: Check out user repo
+    - name: Checkout user repo
       uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # ratchet:actions/checkout@v7.0.0 # zizmor: ignore[unpinned-uses]
       with:
         repository: ${{ github.repository }}
         ref: ${{ inputs.checkout_ref }}
-        path: user_repo
+        path: ${{ inputs.multi_host == 'true' && format('{0}/user_repo', inputs.job_dir) || 'user_repo' }}
         persist-credentials: false
 
     - name: Get workload commit info
       id: commit_info
       shell: bash
-      working-directory: user_repo
+      working-directory: ${{ inputs.multi_host == 'true' && format('{0}/user_repo', inputs.job_dir) || 'user_repo' }}
       env:
         RESOLVED_REF: ${{ inputs.checkout_ref }}
       run: |
@@ -67,6 +83,14 @@ runs:
         echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
 
+    - name: Link user repo
+      if: ${{ inputs.multi_host == 'true' }}
+      shell: bash
+      env:
+        TARGET_USER_REPO: ${{ inputs.job_dir }}/user_repo
+      run: |
+        ln -sfn "$TARGET_USER_REPO" user_repo
+
     - name: Execute workload
       id: execute_workload
       uses: ./ml_actions/actions/dynamic_action_executor
@@ -75,7 +99,8 @@ runs:
         action_inputs: ${{ fromJson(inputs.matrix).workload.action_inputs && toJson(fromJson(inputs.matrix).workload.action_inputs) || '{}' }}
 
     - name: Upload workload artifacts
-      if: ${{ always() }}
+      # Gate to primary node only
+      if: ${{ always() && inputs.is_primary == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
       with:
         # Format: shard-workload-artifacts-{CONFIG}[-{SUFFIX}]-{JOB_ID}.json
@@ -86,7 +111,8 @@ runs:
 
     - name: Parse TB event files
       id: parse_tb_logs
-      if: ${{ always() && !cancelled() }}
+      # Gate to primary node only
+      if: ${{ always() && !cancelled() && inputs.is_primary == 'true' }}
       working-directory: ml_actions
       shell: bash
       env:
@@ -136,7 +162,8 @@ runs:
         echo "::endgroup::"
 
     - name: Upload benchmark result
-      if: ${{ always() && !cancelled() }}
+      # Gate to primary node only
+      if: ${{ always() && !cancelled() && inputs.is_primary == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # ratchet:actions/upload-artifact@v7.0.1 # zizmor: ignore[unpinned-uses]
       with:
         # Format: shard-benchmark-result-{CONFIG}[-{SUFFIX}]-{JOB_ID}
@@ -147,10 +174,22 @@ runs:
     - name: Cleanup benchmark workspace
       if: ${{ always() }}
       shell: bash
+      env:
+        MULTI_HOST: ${{ inputs.multi_host }}
+        SHARED_DIR: ${{ inputs.multi_host_shared_dir }}
+        JOB_DIR: ${{ inputs.job_dir }}
+        IS_PRIMARY: ${{ inputs.is_primary }}
       run: |
         echo "::group::Cleanup benchmark workspace"
         set -euo pipefail
-        # Wipe output directories to ensure a clean state for subsequent runs.
-        rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
-        mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+        rm -f user_repo
+
+        # Only the primary node wipes the shared output directories once parsing/uploading completes
+        if [[ "$IS_PRIMARY" == "true" ]]; then
+          rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+          if [[ "$MULTI_HOST" == "true" ]]; then
+            rm -rf "$SHARED_DIR/$JOB_DIR/user_repo"
+          fi
+        fi
         echo "::endgroup::"
