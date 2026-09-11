@@ -78,6 +78,6 @@ message BenchmarkResult {
   // Optional: Map of optional metadata
   map<string, string> metadata = 12;
 
-  // REQUIRED: The run status of the benchmark (e.g. "SUCCESS", "FAILURE").
-  bap.common.RunStatus run_status = 13 [(buf.validate.field).enum = { not_in: [0]}];
+  // Optional: The run status of the benchmark (e.g. "SUCCESS", "FAILURE").
+  bap.common.RunStatus run_status = 13;
 }
