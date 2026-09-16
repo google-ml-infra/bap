@@ -168,7 +168,7 @@ class TensorBoardParser:
             continue
 
           computed_value = round(
-            float(STAT_FN_MAP[stat_name](np.array(data_vector))), 2
+            float(STAT_FN_MAP[stat_name](np.array(data_vector))), 4
           )
           computed_stats.append(
             benchmark_result_pb2.ComputedStat(
