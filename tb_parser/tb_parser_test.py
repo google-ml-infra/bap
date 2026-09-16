@@ -132,7 +132,7 @@ def test_parse_and_compute_success_v1_scalars(mock_event_accumulator):
     (metric_pb2.Stat.P90, "P90", 4.6),
     (metric_pb2.Stat.P95, "P95", 4.8),
     (metric_pb2.Stat.P99, "P99", 4.96),
-    (metric_pb2.Stat.STDDEV, "STDDEV", round(np.std(np.array([1, 2, 3, 4, 5])), 2)),
+    (metric_pb2.Stat.STDDEV, "STDDEV", round(np.std(np.array([1, 2, 3, 4, 5])), 4)),
     (metric_pb2.Stat.LAST_VALUE, "LAST_VALUE", 5.0),
   ],
 )
