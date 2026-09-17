@@ -142,7 +142,7 @@ def subscribe(cloud_event: CloudEvent) -> None:
 
   bm_result = benchmark_result_pb2.BenchmarkResult()
   try:
-    json_format.Parse(pubsub_message, bm_result, ignore_unknown_fields=False)
+    json_format.Parse(pubsub_message, bm_result, ignore_unknown_fields=True)
   except json_format.ParseError as e:
     raise ValueError(f"Failed to parse BenchmarkResult proto: {e}") from e
 
@@ -152,9 +152,6 @@ def subscribe(cloud_event: CloudEvent) -> None:
     raise ValueError(f"Validation failed: {e}") from e
 
   dataset_id = get_dataset_id()
-  if not dataset_id:
-    # Infer dataset from github_repo if not provided
-    raise ValueError("DATASET_ID env variable is required")
 
   bq_client = get_bq_client()
   project_id = get_project_id() or bq_client.project
