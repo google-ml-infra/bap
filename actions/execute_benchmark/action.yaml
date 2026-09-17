@@ -37,22 +37,22 @@ inputs:
     description: "The absolute path to the directory to store parsed benchmark results."
     required: false
     default: "${{ github.workspace }}/results"
-  multi_host:
-    description: "If true, isolates workspace writes into a unique job folder for multi-host runner support."
-    required: false
-    default: "false"
-  job_dir:
-    description: "The unique subdirectory within github.workspace to isolate this job's writes."
-    required: false
-    default: ""
-  multi_host_shared_dir:
-    description: "Path to the shared GCS volume mounted across multi-host runners."
-    required: false
-    default: "/tmp/bap-ml-actions-ci"
   is_primary:
     description: "Whether this runner is the primary node (rank 0) in a multi-node setup."
     required: false
     default: "true"
+  multi_host:
+    description: "Legacy input from caller workflow."
+    required: false
+    default: "false"
+  job_dir:
+    description: "The unique subdirectory within github.workspace."
+    required: false
+    default: ""
+  multi_host_shared_dir:
+    description: "Path to the shared GCS volume."
+    required: false
+    default: "/tmp/bap-ml-actions-ci"
 
 outputs:
   benchmark_result_file:
@@ -67,16 +67,8 @@ runs:
       with:
         repository: ${{ github.repository }}
         ref: ${{ inputs.checkout_ref }}
-        path: ${{ inputs.multi_host == 'true' && format('{0}/user_repo', inputs.job_dir) || 'user_repo' }}
+        path: user_repo
         persist-credentials: false
-
-    - name: Link user repo
-      if: ${{ inputs.multi_host == 'true' }}
-      shell: bash
-      env:
-        TARGET_USER_REPO: ${{ inputs.job_dir }}/user_repo
-      run: |
-        ln -sfn "$TARGET_USER_REPO" user_repo
 
     - name: Get workload commit info
       id: commit_info
@@ -172,23 +164,12 @@ runs:
         retention-days: 1
 
     - name: Cleanup benchmark workspace
-      if: ${{ always() }}
+      if: ${{ always() && inputs.is_primary == 'true' }}
       shell: bash
-      env:
-        MULTI_HOST: ${{ inputs.multi_host }}
-        SHARED_DIR: ${{ inputs.multi_host_shared_dir }}
-        JOB_DIR: ${{ inputs.job_dir }}
       run: |
         echo "::group::Cleanup benchmark workspace"
         set -euo pipefail
-        if [[ -L user_repo ]]; then
-          rm -f user_repo
-        fi
-
         # Wipe output directories to ensure a clean state for subsequent runs.
         rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
         mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
-        if [[ "$MULTI_HOST" == "true" && -n "$JOB_DIR" ]]; then
-          rm -rf "$SHARED_DIR/$JOB_DIR/user_repo"
-        fi
         echo "::endgroup::"

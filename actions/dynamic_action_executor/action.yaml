@@ -40,11 +40,12 @@ runs:
           exit 1
         fi
 
-        rm -rf ./.dynamic-action && mkdir -p ./.dynamic-action
-        sed "s|\$REQUESTED_ACTION|$REQUESTED_ACTION|g" "$GITHUB_ACTION_PATH/wrapper.yaml.template" > ./.dynamic-action/action.yml
+        # Write into ./ml_actions to inherit the volume visibility and rank isolation fixes
+        rm -rf ./ml_actions/.dynamic-action && mkdir -p ./ml_actions/.dynamic-action
+        sed "s|\$REQUESTED_ACTION|$REQUESTED_ACTION|g" "$GITHUB_ACTION_PATH/wrapper.yaml.template" > ./ml_actions/.dynamic-action/action.yml
         echo "::endgroup::"
 
     - name: Execute wrapper
-      uses: ./.dynamic-action
+      uses: ./ml_actions/.dynamic-action
       with:        
         safe_args: ${{ inputs.action_inputs }}

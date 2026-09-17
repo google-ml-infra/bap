@@ -71,6 +71,7 @@ jobs:
       custom_metadata: ${{ inputs.custom_metadata }}
       benchmark_filter: ${{ inputs.benchmark_filter }}
       environment_filter: ${{ inputs.environment_filter }}
+      multi_host: true
 
   run_ab_e2e_test:
     name: A/B mode E2E test
@@ -86,6 +87,7 @@ jobs:
       ab_mode: true
       post_pr_comment: true
       custom_metadata: ${{ inputs.custom_metadata }}
+      multi_host: true
 
   run_custom_env_e2e_test:
     name: Custom env E2E test
@@ -102,3 +104,4 @@ jobs:
         E2E_TEST_VAR=hello_from_e2e_test
         ANOTHER_VAR=123
       custom_metadata: ${{ inputs.custom_metadata }}
+      multi_host: true
