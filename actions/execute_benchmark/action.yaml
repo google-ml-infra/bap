@@ -70,10 +70,18 @@ runs:
         path: ${{ inputs.multi_host == 'true' && format('{0}/user_repo', inputs.job_dir) || 'user_repo' }}
         persist-credentials: false
 
+    - name: Link user repo
+      if: ${{ inputs.multi_host == 'true' }}
+      shell: bash
+      env:
+        TARGET_USER_REPO: ${{ inputs.job_dir }}/user_repo
+      run: |
+        ln -sfn "$TARGET_USER_REPO" user_repo
+
     - name: Get workload commit info
       id: commit_info
       shell: bash
-      working-directory: ${{ inputs.multi_host == 'true' && format('{0}/user_repo', inputs.job_dir) || 'user_repo' }}
+      working-directory: user_repo
       env:
         RESOLVED_REF: ${{ inputs.checkout_ref }}
       run: |
@@ -82,14 +90,6 @@ runs:
         echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
         echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
-
-    - name: Link user repo
-      if: ${{ inputs.multi_host == 'true' }}
-      shell: bash
-      env:
-        TARGET_USER_REPO: ${{ inputs.job_dir }}/user_repo
-      run: |
-        ln -sfn "$TARGET_USER_REPO" user_repo
 
     - name: Execute workload
       id: execute_workload
@@ -178,18 +178,17 @@ runs:
         MULTI_HOST: ${{ inputs.multi_host }}
         SHARED_DIR: ${{ inputs.multi_host_shared_dir }}
         JOB_DIR: ${{ inputs.job_dir }}
-        IS_PRIMARY: ${{ inputs.is_primary }}
       run: |
         echo "::group::Cleanup benchmark workspace"
         set -euo pipefail
-        rm -f user_repo
+        if [[ -L user_repo ]]; then
+          rm -f user_repo
+        fi
 
-        # Only the primary node wipes the shared output directories once parsing/uploading completes
-        if [[ "$IS_PRIMARY" == "true" ]]; then
-          rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
-          mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
-          if [[ "$MULTI_HOST" == "true" ]]; then
-            rm -rf "$SHARED_DIR/$JOB_DIR/user_repo"
-          fi
+        # Wipe output directories to ensure a clean state for subsequent runs.
+        rm -rf "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+        mkdir -p "$TENSORBOARD_OUTPUT_DIR" "$WORKLOAD_ARTIFACTS_DIR" "$WORKLOAD_METADATA_DIR"
+        if [[ "$MULTI_HOST" == "true" && -n "$JOB_DIR" ]]; then
+          rm -rf "$SHARED_DIR/$JOB_DIR/user_repo"
         fi
         echo "::endgroup::"
