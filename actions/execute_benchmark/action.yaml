@@ -51,25 +51,29 @@ runs:
       with:
         repository: ${{ github.repository }}
         ref: ${{ inputs.checkout_ref }}
-        path: user_repo
+        path: .github/user_repo
         persist-credentials: false
 
     - name: Get workload commit info
       id: commit_info
       shell: bash
-      working-directory: user_repo
+      working-directory: .github/user_repo
       env:
         RESOLVED_REF: ${{ inputs.checkout_ref }}
       run: |
         echo "::group::Get workload commit info"
         set -euo pipefail
+
+        # Provide backward compatibility for workload inputs referencing user_repo/...
+        ln -sfn .github/user_repo "$GITHUB_WORKSPACE/user_repo"
+
         echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
         echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
 
     - name: Execute workload
       id: execute_workload
-      uses: ./ml_actions/actions/dynamic_action_executor
+      uses: ./.github/ml_actions/actions/dynamic_action_executor
       with:
         action: ${{ fromJson(inputs.matrix).workload.action }}
         action_inputs: ${{ fromJson(inputs.matrix).workload.action_inputs && toJson(fromJson(inputs.matrix).workload.action_inputs) || '{}' }}

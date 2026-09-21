@@ -40,11 +40,14 @@ runs:
           exit 1
         fi
 
-        rm -rf ./.dynamic-action && mkdir -p ./.dynamic-action
-        sed "s|\$REQUESTED_ACTION|$REQUESTED_ACTION|g" "$GITHUB_ACTION_PATH/wrapper.yaml.template" > ./.dynamic-action/action.yml
-        echo "::endgroup::"
+        if [[ "$REQUESTED_ACTION" == ./* ]]; then
+          REQUESTED_ACTION="./.github/${REQUESTED_ACTION#./}"
+        fi
 
+        rm -rf ./.github/.dynamic-action && mkdir -p ./.github/.dynamic-action
+        sed "s|\$REQUESTED_ACTION|$REQUESTED_ACTION|g" "$GITHUB_ACTION_PATH/wrapper.yaml.template" > ./.github/.dynamic-action/action.yml
+        echo "::endgroup::"
     - name: Execute wrapper
-      uses: ./.dynamic-action
+      uses: ./.github/.dynamic-action
       with:        
         safe_args: ${{ inputs.action_inputs }}

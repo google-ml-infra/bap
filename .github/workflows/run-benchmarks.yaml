@@ -347,7 +347,7 @@ jobs:
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
-          path: ml_actions
+          path: .github/ml_actions
           persist-credentials: false
 
       - name: Set up benchmark environment
@@ -357,6 +357,9 @@ jobs:
         run: |
           echo "::group::Set up benchmark environment"
           set -euo pipefail
+
+          # Provide backward compatibility for any script expecting root ./ml_actions
+          ln -sfn .github/ml_actions "$GITHUB_WORKSPACE/ml_actions"
 
           # Create TensorBoard output dir, workload artifacts dir, and metadata dir.
           TENSORBOARD_OUTPUT_DIR="$GITHUB_WORKSPACE/tblogs"
@@ -427,12 +430,15 @@ jobs:
             echo "GCC already present: $(command -v gcc)"
           fi
 
+          echo "Scrubbing broken symlinks to ensure K8s network sync succeeds..."
+          find .github -xtype l -delete
+
           echo "::endgroup::"
 
       - name: Execute workload (baseline)
         id: baseline
         if: ${{ matrix.ab_test_group == 'COLOCATED' }}
-        uses: ./ml_actions/actions/execute_benchmark
+        uses: ./.github/ml_actions/actions/execute_benchmark
         with:
           checkout_ref: ${{ matrix.baseline_ref }}
           artifact_suffix: "-BASELINE"
@@ -444,7 +450,7 @@ jobs:
       - name: Execute workload${{ matrix.ab_test_group == 'COLOCATED' && ' (experiment)' || (matrix.ab_test_group && format(' ({0})', matrix.ab_test_group) || '') }}
         id: experiment
         if: ${{ always() && !cancelled() }}
-        uses: ./ml_actions/actions/execute_benchmark
+        uses: ./.github/ml_actions/actions/execute_benchmark
         with:
           checkout_ref: ${{ matrix.ab_test_group == 'COLOCATED' && matrix.experiment_ref || matrix.checkout_ref }}
           artifact_suffix: ${{ matrix.ab_test_group == 'COLOCATED' && '-EXPERIMENT' || (matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '') }}
