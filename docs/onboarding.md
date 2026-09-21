@@ -23,7 +23,7 @@ The system follows two simple contracts:
 
 Our platform handles the following:
 
-- Provisioning the correct GitHub Actions runners.
+- Provisioning the correct GitHub Actions runners, including K8s multi-host JobSets (e.g., multi-node TPUs).
 - Converting defined benchmarks and environment requirements into GitHub Actions jobs.
 - Securely executing the specified workload action.
 - TensorFlow event file parsing and statistic computation.
@@ -150,6 +150,8 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 | `runtime_flags` | No | Base runtime flags passed to the binary.
 | `runtime_flags_hw` | No | Hardware-specific runtime flags, appended to runtime_flags. |
 | `teardown` | No | If `"true"`, runs `bazel clean --expunge` at the end of the run to reclaim the entire output base (including caches and external repos). |
+
+**Note for Multi-Host Workloads**: If your benchmark runs in a multi-host distributed environment (e.g., multi-node TPU K8s JobSets), Bazel strips out Kubernetes networking variables by default. You must explicitly pass these variables into the sandbox so your script can read them. Add `--action_env=JOB_COMPLETION_INDEX` to your `bazel_run_flags` to expose the pod rank, along with any other custom distributed coordination variables (e.g., `--action_env=JAX_COORDINATOR_ADDRESS`).
 
 ### Defining metrics
 
@@ -284,6 +286,25 @@ The reusable workflow injects three standard environment variables into your wor
 | `TENSORBOARD_OUTPUT_DIR` | **Yes** | Directory where TensorFlow event files must be written for metric parsing. |
 | `WORKLOAD_ARTIFACTS_DIR` | No | Directory where arbitrary files (e.g., logits, images, debug logs) can be written. |
 | `WORKLOAD_METADATA_DIR` | No | Directory where JSON files containing dynamic metadata (e.g., software versions, hardware IDs) can be written. |
+
+### Multi-Host (Distributed) Workloads
+
+If your benchmark executes in a multi-host K8s environment (e.g., TPU multi-node JobSets), the underlying infrastructure runs your workload script simultaneously across all worker pods in the topology.
+
+BAP **only reads output from the coordinator pod (Pod 0 / Rank 0)** and automatically syncs its output directories back to the central runner. To prevent redundant operations, **we strongly encourage restricting all file I/O to Pod 0** rather than writing metrics or artifacts to disk from other worker pods.
+
+Example using JAX:
+
+```python
+import jax
+import os
+
+# Ensure only the coordinator executes I/O operations
+if jax.process_index() == 0:
+  # Write TensorBoard logs to TENSORBOARD_OUTPUT_DIR
+  # Write artifacts to WORKLOAD_ARTIFACTS_DIR
+  pass
+```
 
 ### Logging Metrics (TensorBoard)
 
