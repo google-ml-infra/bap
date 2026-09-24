@@ -213,7 +213,6 @@ jobs:
           INPUT_EXPERIMENT: ${{ inputs.experiment_ref }}
           IS_PR: ${{ github.event_name == 'pull_request' }}
           PR_BASE: ${{ github.base_ref }}
-          PR_HEAD: ${{ github.head_ref }}
           REF_NAME: ${{ github.ref_name }}
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
           # If we are in the bap repo itself, use the current SHA.
@@ -231,7 +230,7 @@ jobs:
           if [[ -n "$INPUT_EXPERIMENT" ]]; then
             EXPERIMENT_REF="$INPUT_EXPERIMENT"
           elif [[ "$IS_PR" == "true" ]]; then
-            EXPERIMENT_REF="$PR_HEAD"
+            EXPERIMENT_REF="$SHA"
           else
             EXPERIMENT_REF="$REF_NAME"
           fi
@@ -558,6 +557,7 @@ jobs:
 
       - name: Post PR comment
         if: ${{ inputs.post_pr_comment == true && github.event_name == 'pull_request' && !cancelled() }}
+        continue-on-error: true
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # ratchet:actions/github-script@v9.0.0 # zizmor: ignore[unpinned-uses]
         env:
           COMMENT_MARKER: ${{ inputs.job_id || github.workflow }}
