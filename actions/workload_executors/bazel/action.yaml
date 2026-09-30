@@ -60,10 +60,12 @@ runs:
         echo "ARGS: $ARGS"
         echo "----------------------------------------------------------------"
 
+        # Add --action_env=JOB_COMPLETION_INDEX to guarantee partner workloads can see their K8s rank
         bazel run \
           --noshow_progress \
           --noshow_loading_progress \
           --ui_event_filters=-info \
+          --action_env=JOB_COMPLETION_INDEX \
           $BAZEL_RUN_FLAGS \
           "$TARGET" \
           -- \

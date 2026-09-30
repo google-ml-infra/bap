@@ -346,7 +346,7 @@ jobs:
         with:
           repository: "google-ml-infra/bap"
           ref: ${{ needs.generate_matrix.outputs.bap_ref }}
-          path: ml_actions
+          path: .github/ml_actions
           persist-credentials: false
 
       - name: Set up benchmark environment
@@ -356,6 +356,9 @@ jobs:
         run: |
           echo "::group::Set up benchmark environment"
           set -euo pipefail
+
+          # Provide backward compatibility for any script expecting root ./ml_actions
+          ln -sfn .github/ml_actions "$GITHUB_WORKSPACE/ml_actions"
 
           # Create TensorBoard output dir, workload artifacts dir, and metadata dir.
           TENSORBOARD_OUTPUT_DIR="$GITHUB_WORKSPACE/tblogs"
@@ -431,7 +434,7 @@ jobs:
       - name: Execute workload (baseline)
         id: baseline
         if: ${{ matrix.ab_test_group == 'COLOCATED' }}
-        uses: ./ml_actions/actions/execute_benchmark
+        uses: ./.github/ml_actions/actions/execute_benchmark # zizmor: ignore[self-repository]
         with:
           checkout_ref: ${{ matrix.baseline_ref }}
           artifact_suffix: "-BASELINE"
@@ -443,7 +446,7 @@ jobs:
       - name: Execute workload${{ matrix.ab_test_group == 'COLOCATED' && ' (experiment)' || (matrix.ab_test_group && format(' ({0})', matrix.ab_test_group) || '') }}
         id: experiment
         if: ${{ always() && !cancelled() }}
-        uses: ./ml_actions/actions/execute_benchmark
+        uses: ./.github/ml_actions/actions/execute_benchmark # zizmor: ignore[self-repository]
         with:
           checkout_ref: ${{ matrix.ab_test_group == 'COLOCATED' && matrix.experiment_ref || matrix.checkout_ref }}
           artifact_suffix: ${{ matrix.ab_test_group == 'COLOCATED' && '-EXPERIMENT' || (matrix.ab_test_group && format('-{0}', matrix.ab_test_group) || '') }}
@@ -464,6 +467,11 @@ jobs:
         run: |
           echo "::group::Publish results to Pub/Sub"
           set -euo pipefail
+
+          if [[ "${JOB_COMPLETION_INDEX:-0}" != "0" ]]; then
+            echo "Worker node. Skipping Pub/Sub upload."
+            exit 0
+          fi
 
           bazel run \
             --noshow_progress \
