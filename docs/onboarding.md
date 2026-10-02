@@ -644,3 +644,20 @@ If you are using the public topic, the details will be:
 You can then configure your client to listen to this subscription using the standard [Google Cloud Pub/Sub libraries](https://docs.cloud.google.com/pubsub/docs/reference/libraries).
 
 **Security Note**: Consumers are strongly encouraged to validate incoming messages before processing them. The [BenchmarkResult]((https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)) protocol buffer definition is compatible with [protovalidate](https://github.com/bufbuild/protovalidate), allowing for robust constraints checking.
+
+## Data Studio Dashboards
+
+BAP supports public Data Studio dashboards for visualizing and tracking your repository's benchmark results over time.
+
+### Prerequisites
+
+Ensure your workflow is configured to publish benchmark results. 
+
+### Requesting a Dashboard
+
+To set up a Data Studio dashboard for your repository, please [submit a dashboard request](https://github.com/google-ml-infra/bap/issues/new?template=data-studio-dashboard-request.md) using our issue template.
+
+1. **Repository Name**: The full repository name including the owner/organization (e.g., google/jax).
+
+2. **Data Sensitivity**: Dashboards are public by default. **Note:** If your data cannot be made public (e.g., private repo, restricted results), please specify in the issue that you require a private dashboard.
+
