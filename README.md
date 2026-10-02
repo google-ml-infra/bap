@@ -22,8 +22,9 @@ BAP provides various capabilities for performance management:
     baseline and fails CI jobs if a regression is detected.
 -   **A/B Testing**: A dedicated mode for head-to-head performance comparisons
     in presubmit to isolate noise and detect regressions accurately.
--   **Downstream Consumer Integration**: Publishes results via Pub/Sub to
-    supported consumers, including **Data Studio** (*Available Q3 2026*) for public dashboards.
+-   **Pub/Sub Integration**: Publishes benchmark results via Pub/Sub to
+    supported downstream consumers.
+-   **Data Studio**: Public dashboards for visualizing and tracking benchmark results.
 
 ## Users
 
