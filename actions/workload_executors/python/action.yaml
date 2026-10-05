@@ -50,24 +50,29 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Install uv
+      uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # ratchet:astral-sh/setup-uv@v10.1.0
+
     - name: Install Python
       shell: bash
-      env: 
+      env:
         PYTHON_VERSION: ${{ inputs.python_version }}
       run: |
         echo "::group::Install Python"
         set -euo pipefail
-        "$GITHUB_ACTION_PATH/setup_python.sh" "$PYTHON_VERSION"
+        uv python install -- "$PYTHON_VERSION"
         echo "::endgroup::"
 
     - name: Setup virtual environment
       shell: bash
+      env:
+        PYTHON_VERSION: ${{ inputs.python_version }}
       run: |
         echo "::group::Setup virtual environment"
         set -euo pipefail
         VENV_DIR="$GITHUB_WORKSPACE/.venv"
         echo "Creating virtual environment in $VENV_DIR."
-        python -m venv "$VENV_DIR"
+        uv venv --allow-existing --python="$PYTHON_VERSION" -- "$VENV_DIR"
         echo "::endgroup::"
 
     - name: Install dependencies
