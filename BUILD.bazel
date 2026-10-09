@@ -11,3 +11,21 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+load("@rules_license//rules:license.bzl", "license")
+
+package(default_applicable_licenses = [":license"])
+
+# License metadata for the repository. Packages attach it via
+# `default_applicable_licenses = ["//:license"]` in their package() rule so
+# that license-aware tooling (SBOM generation, compliance checks) can discover
+# the LICENSE text through the build graph.
+license(
+    name = "license",
+    package_name = "bap",
+    license_kinds = ["@rules_license//licenses/spdx:Apache-2.0"],
+    license_text = "LICENSE",
+    visibility = ["//visibility:public"],
+)
+
+exports_files(["LICENSE"])
