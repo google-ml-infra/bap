@@ -22,6 +22,7 @@ bazel_dep(name = "rules_pkg", version = "0.10.1")
 bazel_dep(name = "rules_oci", version = "1.7.6")
 bazel_dep(name = "protobuf", version = "32.1")
 bazel_dep(name = "protovalidate", version = "1.2.0")
+bazel_dep(name = "rules_license", version = "1.0.0")
 
 # --- Python Toolchain Setup ---
 python = use_extension("@rules_python//python:extensions.bzl", "python")
