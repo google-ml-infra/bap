@@ -16,6 +16,10 @@ Please provide the details below to request a Data Studio dashboard for your rep
 <!-- The full repository name including the owner/organization (e.g., google/jax) -->
 [Enter repository name here]
 
-**2. Data Sensitivity**
+**2. BigQuery Dataset Name**
+<!-- The desired BigQuery dataset name for storing benchmark results. Must not contain hyphens (e.g., jax_benchmark_results) -->
+[Enter dataset name here]
+
+**3. Data Sensitivity**
 <!-- Dashboards are public by default. If your data cannot be made public (e.g., private repo), specify that you require a private dashboard. -->
 [Public / Private]

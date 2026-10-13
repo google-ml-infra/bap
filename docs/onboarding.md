@@ -659,5 +659,7 @@ To set up a Data Studio dashboard for your repository, please [submit a dashboar
 
 1. **Repository Name**: The full repository name including the owner/organization (e.g., google/jax).
 
-2. **Data Sensitivity**: Dashboards are public by default. **Note:** If your data cannot be made public (e.g., private repo, restricted results), please specify in the issue that you require a private dashboard.
+2. **BigQuery Dataset Name**: The desired BigQuery dataset name for storing benchmark results. Must not contain hyphens (e.g., `jax_benchmark_results`).
+
+3. **Data Sensitivity**: Dashboards are public by default. **Note:** If your data cannot be made public (e.g., private repo, restricted results), please specify in the issue that you require a private dashboard.
 
