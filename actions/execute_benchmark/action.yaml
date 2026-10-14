@@ -37,6 +37,10 @@ inputs:
     description: "The absolute path to the directory to store parsed benchmark results."
     required: false
     default: "${{ github.workspace }}/results"
+  halt_for_connection:
+    description: "Should this benchmark execution wait for a remote connection?"
+    required: false
+    default: "false"
 
 outputs:
   benchmark_result_file:
@@ -70,6 +74,11 @@ runs:
         echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
         echo "ref=$RESOLVED_REF" >> "$GITHUB_OUTPUT"
         echo "::endgroup::"
+
+    - name: Wait For Connection
+      uses: google-ml-infra/actions/ci_connection@7f5ca0c263a81ed09ea276524c1b9192f1304e3c # ratchet:google-ml-infra/actions/ci_connection@main # zizmor: ignore[unpinned-uses]
+      with:
+        halt-dispatch-input: ${{ inputs.halt_for_connection }}
 
     - name: Execute workload
       id: execute_workload

@@ -108,6 +108,11 @@ on:
         required: false
         type: string
         default: "{}"
+      halt_for_connection:
+        description: "Should this workflow run wait for a remote connection?"
+        type: boolean
+        required: false
+        default: false
 
     outputs:
       job_id:
@@ -442,6 +447,7 @@ jobs:
           job_id: ${{ needs.generate_matrix.outputs.job_id }}
           custom_metadata: ${{ inputs.custom_metadata }}
           results_dir: "${{ github.workspace }}/results_baseline"
+          halt_for_connection: ${{ inputs.halt_for_connection }}
 
       - name: Execute workload${{ matrix.ab_test_group == 'COLOCATED' && ' (experiment)' || (matrix.ab_test_group && format(' ({0})', matrix.ab_test_group) || '') }}
         id: experiment
@@ -454,6 +460,7 @@ jobs:
           job_id: ${{ needs.generate_matrix.outputs.job_id }}
           custom_metadata: ${{ inputs.custom_metadata }}
           results_dir: "${{ github.workspace }}/results"
+          halt_for_connection: ${{ inputs.halt_for_connection }}
 
       - name: Publish results to Pub/Sub
         if: ${{ always() && !cancelled() && inputs.publish_metrics && !inputs.ab_mode }}
