@@ -14,6 +14,7 @@
 
 """Library for generating a GitHub Actions matrix from a benchmark registry."""
 
+import logging
 import os
 import re
 import sys
@@ -26,6 +27,8 @@ from bap_proto import benchmark_registry_pb2
 from bap_proto import benchmark_job_pb2
 from bap_proto.common import workload_action_pb2
 from bap_proto.common import workflow_type_pb2
+
+logger = logging.getLogger(__name__)
 
 
 def _format_validation_error(violation) -> str:
@@ -84,7 +87,7 @@ def load_and_validate_suite_from_pbtxt(
     with open(path, "r") as f:
       suite = text_format.Parse(f.read(), benchmark_registry_pb2.BenchmarkSuite())
   except (FileNotFoundError, text_format.ParseError) as e:
-    print(f"Error loading or parsing registry file '{path}': {e}", file=sys.stderr)
+    logger.error("Error loading or parsing registry file '%s': %s", path, e)
     sys.exit(1)
 
   try:

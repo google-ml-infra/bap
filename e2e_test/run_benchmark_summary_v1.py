@@ -14,6 +14,8 @@
 
 """Fake benchmark script for E2E testing the reusable workflow. Logs metrics using TF 1.x Summary."""
 
+import json
+import logging
 import os
 import sys
 import time
@@ -21,23 +23,27 @@ import time
 from tensorboard.compat.proto import event_pb2
 from tensorboard.compat.proto import summary_pb2
 from tensorboard.summary.writer.event_file_writer import EventFileWriter
+from utils import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 def main():
   """Runs a fake benchmark and writes TensorBoard logs + artifacts."""
-  print("E2E test benchmark script starting.")
+  logging_config.setup_logging()
+  logger.info("E2E test benchmark script starting.")
   tblog_dir = os.environ.get("TENSORBOARD_OUTPUT_DIR")
   artifact_dir = os.environ.get("WORKLOAD_ARTIFACTS_DIR")
   metadata_dir = os.environ.get("WORKLOAD_METADATA_DIR")
 
   if not tblog_dir:
-    print("Error: TENSORBOARD_OUTPUT_DIR env var not set.", file=sys.stderr)
+    logger.error("TENSORBOARD_OUTPUT_DIR env var not set.")
     sys.exit(1)
 
   # Write TensorBoard metrics
-  print(f"Received TENSORBOARD_OUTPUT_DIR: {tblog_dir}.")
+  logger.info("Received TENSORBOARD_OUTPUT_DIR: %s.", tblog_dir)
   args = sys.argv[1:]
-  print(f"Received runtime_flags: {args}.")
+  logger.info("Received runtime_flags: %s.", args)
   fake_metrics = [101.2, 100.5, 102.1, 99.8, 101.5]
 
   try:
@@ -55,34 +61,32 @@ def main():
 
     writer.close()
 
-    print(f"Successfully wrote 5 wall_time metrics to {tblog_dir}")
+    logger.info("Successfully wrote 5 wall_time metrics to %s", tblog_dir)
 
     # Create workload artifact
     if artifact_dir:
-      print(f"Received WORKLOAD_ARTIFACTS_DIR: {artifact_dir}")
+      logger.info("Received WORKLOAD_ARTIFACTS_DIR: %s", artifact_dir)
       artifact_path = os.path.join(artifact_dir, "test_artifact.txt")
       with open(artifact_path, "w") as f:
         f.write("Hello from run_benchmark_summary_v1.")
-      print(f"Successfully wrote artifact to {artifact_path}")
+      logger.info("Successfully wrote artifact to %s", artifact_path)
     else:
-      print("Warning: WORKLOAD_ARTIFACTS_DIR env var not set.")
+      logger.warning("WORKLOAD_ARTIFACTS_DIR env var not set.")
 
     # Create dynamic metadata
     if metadata_dir:
-      print(f"Received WORKLOAD_METADATA_DIR: {metadata_dir}")
+      logger.info("Received WORKLOAD_METADATA_DIR: %s", metadata_dir)
       metadata_path = os.path.join(metadata_dir, "workload_metadata.json")
-      import json
-
       with open(metadata_path, "w") as f:
         json.dump({"driver_version": "535.100", "cuda_version": "12.2"}, f)
-      print(f"Successfully wrote dynamic metadata to {metadata_path}")
+      logger.info("Successfully wrote dynamic metadata to %s", metadata_path)
     else:
-      print("Warning: WORKLOAD_METADATA_DIR env var not set.")
+      logger.warning("WORKLOAD_METADATA_DIR env var not set.")
 
-    print("E2E test benchmark script finished.")
+    logger.info("E2E test benchmark script finished.")
 
   except Exception as e:
-    print(f"Error executing benchmark: {e}", file=sys.stderr)
+    logger.error("Error executing benchmark: %s", e)
     sys.exit(1)
 
 

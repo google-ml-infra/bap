@@ -16,14 +16,19 @@
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 from google.protobuf import json_format
 from ab_analyzer import ab_analyzer_lib
 from bap_proto import benchmark_job_pb2
+from utils import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(description="Analyze A/B benchmark results.")
 
   parser.add_argument(
@@ -90,10 +95,10 @@ def main():
   # Write A/B report
   args.output_file.write_text(report_content)
 
-  print(f"Report written to {args.output_file}")
+  logger.info("Report written to %s", args.output_file)
 
   if not is_success:
-    print("Regressions detected!", file=sys.stderr)
+    logger.error("Regressions detected!")
     sys.exit(1)
 
 

@@ -23,6 +23,7 @@ py_binary(
     deps = [
         "//bap_proto:benchmark_result_py_proto",
         "//bap_proto/common:workflow_type_py_proto",
+        "//utils:logging_config",
         "@pypi//google_cloud_bigquery",
         "@pypi//protobuf",
         "@pypi//protovalidate",

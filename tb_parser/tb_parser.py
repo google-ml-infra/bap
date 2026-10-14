@@ -16,13 +16,17 @@
 
 import argparse
 import json
+import logging
 import os
 import sys
 from google.protobuf import json_format, timestamp_pb2
+from utils import logging_config
 from utils import metric_parser
 from tb_parser import tb_parser_lib
 from bap_proto import benchmark_result_pb2
 from protovalidate import validate, ValidationError
+
+logger = logging.getLogger(__name__)
 
 
 def _format_validation_error(violation) -> str:
@@ -50,14 +54,15 @@ def _load_dynamic_metadata(metadata_dir: str) -> dict[str, str]:
             # Ensure all values are strings as per proto map<string, string>
             merged_metadata.update({k: str(v) for k, v in data.items()})
           else:
-            print(f"Warning: Skipping {filename} as it is not a JSON object.")
+            logger.warning("Skipping %s as it is not a JSON object.", filename)
       except Exception as e:
-        print(f"Warning: Failed to parse metadata file {filename}: {e}")
+        logger.warning("Failed to parse metadata file %s: %s", filename, e)
 
   return merged_metadata
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(description="Parse TensorBoard logs.")
   parser.add_argument(
     "--metric_specs_json", required=True, help="JSON list of MetricSpecs."
@@ -104,7 +109,7 @@ def main():
   try:
     metric_specs = metric_parser.parse_metric_specs_from_json(args.metric_specs_json)
   except ValueError as e:
-    print(f"Error: {e}", file=sys.stderr)
+    logger.error("%s", e)
     sys.exit(1)
 
   tb_parser = tb_parser_lib.TensorBoardParser(metric_specs)
@@ -122,19 +127,19 @@ def main():
     custom_metadata = json.loads(args.custom_metadata_json or "{}") or {}
 
     if not isinstance(final_metadata, dict):
-      print(
-        f"Warning: static_metadata_json is not a JSON object: {args.static_metadata_json}"
+      logger.warning(
+        "static_metadata_json is not a JSON object: %s", args.static_metadata_json
       )
       final_metadata = {}
     if not isinstance(custom_metadata, dict):
-      print(
-        f"Warning: custom_metadata_json is not a JSON object: {args.custom_metadata_json}"
+      logger.warning(
+        "custom_metadata_json is not a JSON object: %s", args.custom_metadata_json
       )
       custom_metadata = {}
 
     final_metadata.update(custom_metadata)
   except json.JSONDecodeError as e:
-    print(f"Error parsing metadata JSON: {e}", file=sys.stderr)
+    logger.error("Error parsing metadata JSON: %s", e)
     sys.exit(1)
 
   dynamic_metadata = _load_dynamic_metadata(args.workload_metadata_dir)
@@ -164,9 +169,9 @@ def main():
     validate(result)
   except ValidationError as e:
     error_messages = "\n".join(_format_validation_error(v) for v in e.violations)
-    print(
-      f"Error: Internal validation of BenchmarkResult failed:\n{error_messages}",
-      file=sys.stderr,
+    logger.error(
+      "Internal validation of BenchmarkResult failed:\n%s",
+      error_messages,
     )
     sys.exit(1)
 
@@ -174,11 +179,14 @@ def main():
   try:
     with open(args.output_file, "w") as f:
       f.write(json_format.MessageToJson(result))
-    print(f"Successfully parsed TensorBoard logs and created {args.output_file}.")
+    logger.info(
+      "Successfully parsed TensorBoard logs and created %s.", args.output_file
+    )
   except Exception as e:
-    print(
-      f"Error writing result artifact to '{args.output_file}': {e}",
-      file=sys.stderr,
+    logger.error(
+      "Error writing result artifact to '%s': %s",
+      args.output_file,
+      e,
     )
     sys.exit(1)
 

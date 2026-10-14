@@ -32,6 +32,7 @@ py_binary(
     main = "publish_results.py",
     deps = [
         ":publish_results_lib",
+        "//utils:logging_config",
         "@pypi//protovalidate",
     ],
 )

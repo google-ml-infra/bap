@@ -39,11 +39,16 @@ Final output structure (in final_dir):
 """
 
 import argparse
+import logging
 from pathlib import Path
 from artifact_bundler import artifact_bundler_lib
+from utils import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(
     description="Bundles individual artifacts produced by parallel benchmark runs into a single, structured directory."
   )
@@ -62,8 +67,8 @@ def main():
   )
   args = parser.parse_args()
 
-  print(f"Bundling artifacts for Job ID: {args.job_id}")
-  print(f"Target bundle directory: {args.final_dir}")
+  logger.info("Bundling artifacts for Job ID: %s", args.job_id)
+  logger.info("Target bundle directory: %s", args.final_dir)
 
   if not args.raw_dir.is_dir():
     raise ValueError(f"{args.raw_dir} is not a valid directory.")
@@ -74,7 +79,7 @@ def main():
   try:
     artifact_bundler_lib.move_root_artifacts(args.raw_dir, args.final_dir, args.job_id)
     artifact_bundler_lib.process_benchmarks(args.raw_dir, args.final_dir, args.job_id)
-    print(f"Successfully bundled artifacts in: {args.final_dir}")
+    logger.info("Successfully bundled artifacts in: %s", args.final_dir)
   except Exception as e:
     raise RuntimeError(f"Unexpected error bundling artifacts: {e}") from e
 
