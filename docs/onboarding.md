@@ -80,7 +80,7 @@ The reusable workflow supports the following inputs:
 | `publish_metrics` | No | `false` | If `true`, publishes benchmark results to Google Cloud Pub/Sub. |
 | `pub_sub_gcp_project_id` | No | `ml-oss-benchmarking-production` | GCP project ID for Pub/Sub. |
 | `pub_sub_gcp_topic_id` | No | `public-results-prod` | Pub/Sub topic ID to publish results to. |
-| `runner` | No | `linux-x86-n2-16` | The runner label to use for standard jobs. |
+| `runner` | No | `linux-x86-n4-16` | The runner label to use for standard jobs. |
 | `custom_env_vars` | No | `""` | Multi-line string of environment variables to inject into the runner environment (formatted like a `.env` file). |
 | `custom_metadata` | No | `{}` | JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload. |
 
