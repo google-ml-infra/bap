@@ -17,12 +17,14 @@ Library for performing static threshold analysis on a benchmark result.
 """
 
 from collections.abc import Sequence
+import logging
 import re
-import sys
 from typing import TypedDict
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
 from utils import markdown_formatter
+
+logger = logging.getLogger(__name__)
 
 ResultMap = dict[tuple[str, str], benchmark_result_pb2.ComputedStat]
 MetricSpecs = Sequence[metric_pb2.MetricSpec]
@@ -178,9 +180,10 @@ class StaticAnalyzer:
         if not matched_metrics:
           id_type = metric_spec.WhichOneof("identifier")
           identifier = metric_spec.pattern if id_type == "pattern" else metric_spec.name
-          print(
-            f"Warning: Skipping check for {identifier} ({stat_name}): Computed statistic not found in artifact.",
-            file=sys.stderr,
+          logger.warning(
+            "Skipping check for %s (%s): Computed statistic not found in artifact.",
+            identifier,
+            stat_name,
           )
           continue
 

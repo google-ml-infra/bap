@@ -20,6 +20,7 @@ benchmark runs and bundle them into a single, structured directory tree.
 """
 
 import json
+import logging
 import shutil
 from pathlib import Path
 from typing import Sequence
@@ -28,6 +29,8 @@ from google.protobuf import json_format
 from protovalidate import validate, ValidationError
 from buf.validate.validate_pb2 import Violation
 from bap_proto import benchmark_job_pb2
+
+logger = logging.getLogger(__name__)
 
 
 def _format_validation_error(violation: Violation) -> str:
@@ -72,7 +75,7 @@ def _parse_and_validate_matrix(
 
   validated_jobs = []
 
-  print(f"Validating {len(raw_data)} matrix entries.")
+  logger.info("Validating %d matrix entries.", len(raw_data))
   for i, item in enumerate(raw_data):
     try:
       # Parse
@@ -117,18 +120,18 @@ def move_root_artifacts(raw_dir: Path, final_dir: Path, job_id: str) -> None:
   dest_matrix = final_dir / "matrix.json"
   if src_matrix.exists():
     shutil.move(str(src_matrix), str(dest_matrix))
-    print(f"Created {dest_matrix}")
+    logger.info("Created %s", dest_matrix)
 
   # Move report (if exists)
   report_dir_match = list(raw_dir.glob(f"shard-ab-report-{job_id}"))
   if not report_dir_match:
-    print("No report artifact found.")
+    logger.info("No report artifact found.")
   else:
     src_report = report_dir_match[0] / "benchmark_report.md"
     dest_report = final_dir / "benchmark_report.md"
     if src_report.exists():
       shutil.move(str(src_report), str(dest_report))
-      print(f"Created {dest_report}")
+      logger.info("Created %s", dest_report)
 
 
 def process_benchmarks(raw_dir: Path, final_dir: Path, job_id: str) -> None:
@@ -170,11 +173,11 @@ def process_benchmarks(raw_dir: Path, final_dir: Path, job_id: str) -> None:
     dest_res = dest_dir / "benchmark_result.json"
     if res_src.exists():
       shutil.move(str(res_src), str(dest_res))
-      print(f"Created {dest_res}")
+      logger.info("Created %s", dest_res)
 
     # Move workload artifacts
     art_src = raw_dir / f"shard-workload-artifacts-{artifact_suffix}"
     dest_art = dest_dir / "workload_artifacts"
     if art_src.is_dir():
       shutil.move(str(art_src), str(dest_art))
-      print(f"Created {dest_art}")
+      logger.info("Created %s", dest_art)

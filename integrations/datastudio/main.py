@@ -41,6 +41,10 @@ from protovalidate import ValidationError, Validator
 
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import workflow_type_pb2
+from utils import logging_config
+
+logging_config.setup_logging()
+logger = logging.getLogger(__name__)
 
 
 def get_dataset_id() -> str:
@@ -126,8 +130,10 @@ def subscribe(cloud_event: CloudEvent) -> None:
   github_repo = get_team_github_repo()
   repo_attr = cloud_event.data["message"].get("attributes", {}).get("repo")
   if repo_attr != github_repo:
-    logging.warning(
-      f"Discarding message: repo attribute '{repo_attr}' does not match TEAM_GITHUB_REPO '{github_repo}'"
+    logger.warning(
+      "Discarding message: repo attribute '%s' does not match TEAM_GITHUB_REPO '%s'",
+      repo_attr,
+      github_repo,
     )
     return
 
@@ -174,7 +180,7 @@ def subscribe(cloud_event: CloudEvent) -> None:
   if errors:
     raise RuntimeError(f"Encountered errors while inserting rows: {errors}")
   else:
-    logging.info(f"Successfully inserted row into {table_id}")
+    logger.info("Successfully inserted row into %s", table_id)
 
 
 if __name__ == "__main__":

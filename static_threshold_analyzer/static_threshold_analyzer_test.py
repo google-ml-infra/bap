@@ -14,6 +14,7 @@
 
 """Tests for the static threshold analyzer library."""
 
+import logging
 import sys
 from unittest.mock import patch
 import pytest
@@ -156,7 +157,7 @@ def test_no_comparison_spec_is_skipped():
   assert not analyzer.evaluations[0]["has_comparison"]
 
 
-def test_stat_not_found_in_result(capsys):
+def test_stat_not_found_in_result(caplog):
   """Tests that a stat in the specs but not in the result is skipped."""
   metric_specs = _create_metric_specs(
     stats=[
@@ -177,12 +178,12 @@ def test_stat_not_found_in_result(capsys):
   )
 
   analyzer = StaticAnalyzer(metric_specs)
-  analyzer.run_analysis(result)
+  with caplog.at_level(logging.WARNING):
+    analyzer.run_analysis(result)
 
   assert len(analyzer.regressions) == 0
-  captured = capsys.readouterr()
   assert (
-    "Skipping check for wall_time (MEAN): Computed statistic not found" in captured.err
+    "Skipping check for wall_time (MEAN): Computed statistic not found" in caplog.text
   )
 
 

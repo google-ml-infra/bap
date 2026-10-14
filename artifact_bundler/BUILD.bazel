@@ -30,6 +30,7 @@ py_binary(
     srcs = ["artifact_bundler.py"],
     deps = [
         ":artifact_bundler_lib",
+        "//utils:logging_config",
     ],
 )
 
