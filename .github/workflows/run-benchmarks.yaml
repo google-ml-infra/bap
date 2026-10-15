@@ -97,7 +97,7 @@ on:
         description: "The runner label to use for standard jobs."
         required: false
         type: string
-        default: "linux-x86-n2-16"
+        default: "linux-x86-n4-16"
       custom_env_vars:
         description: "Multi-line string of environment variables to inject into the workflow environment (formatted like a .env file)."
         required: false
