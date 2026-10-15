@@ -109,7 +109,7 @@ on:
         type: string
         default: "{}"
       halt_for_connection:
-        description: "Should this workflow run wait for a remote connection?"
+        description: "If true, halts the benchmark runner before workload execution and waits for a remote debugging connection."
         type: boolean
         required: false
         default: false

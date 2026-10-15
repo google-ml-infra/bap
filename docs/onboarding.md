@@ -83,6 +83,7 @@ The reusable workflow supports the following inputs:
 | `runner` | No | `linux-x86-n2-16` | The runner label to use for standard jobs. |
 | `custom_env_vars` | No | `""` | Multi-line string of environment variables to inject into the runner environment (formatted like a `.env` file). |
 | `custom_metadata` | No | `{}` | JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload. |
+| `halt_for_connection` | No | `false` | If `true`, halts the benchmark runner before workload execution and waits for a remote debugging connection. |
 
 ### Workflow Outputs
 
@@ -605,6 +606,10 @@ You can run the workflow against your branch using the GitHub Web UI or the CLI.
 
 - [GitHub UI](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)
 - [GitHub CLI](https://cli.github.com/manual/gh_workflow_run)
+
+## Remote CI Debugging
+
+BAP natively integrates [ML CI Connection](https://github.com/google-ml-infra/actions/tree/main/ci_connection) via the `halt_for_connection` workflow input, allowing you to request a connection during a `workflow_dispatch`. When triggered, the workflow halts right after initializing the benchmark environment and checking out your repository but right before executing the workload, so you can remotely connect to the runner for interactive debugging.
 
 ## Data Consumption (Pub/Sub)
 

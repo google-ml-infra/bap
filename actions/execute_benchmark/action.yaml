@@ -38,7 +38,7 @@ inputs:
     required: false
     default: "${{ github.workspace }}/results"
   halt_for_connection:
-    description: "Should this benchmark execution wait for a remote connection?"
+    description: "If true, halts the benchmark runner before workload execution and waits for a remote debugging connection."
     required: false
     default: "false"
 
