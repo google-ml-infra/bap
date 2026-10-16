@@ -609,7 +609,7 @@ You can run the workflow against your branch using the GitHub Web UI or the CLI.
 
 ## Remote CI Debugging
 
-BAP natively integrates [ML CI Connection](https://github.com/google-ml-infra/actions/tree/main/ci_connection) via the `halt_for_connection` workflow input, allowing you to request a connection during a `workflow_dispatch`. When triggered, the workflow halts right after initializing the benchmark environment and checking out your repository but right before executing the workload, so you can remotely connect to the runner for interactive debugging.
+BAP natively integrates [ML CI Connection](https://github.com/google-ml-infra/actions/tree/main/ci_connection) and exposes the `halt_for_connection` workflow input. When triggered, the workflow halts right before workload execution, so you can remotely connect to the runner for interactive debugging.
 
 ## Data Consumption (Pub/Sub)
 
