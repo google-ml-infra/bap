@@ -15,6 +15,7 @@
 """Tests for the Artifact Bundler library."""
 
 import json
+import logging
 import sys
 from pathlib import Path
 from unittest import mock
@@ -157,7 +158,7 @@ def test_move_root_artifacts_missing_matrix(tmp_path: Path):
     artifact_bundler_lib.move_root_artifacts(raw_dir, final_dir, job_id)
 
 
-def test_move_root_artifacts_missing_report(tmp_path: Path, capsys):
+def test_move_root_artifacts_missing_report(tmp_path: Path, caplog):
   """Test that missing report is optional and handled gracefully."""
   raw_dir = tmp_path / "raw"
   final_dir = tmp_path / "final"
@@ -167,13 +168,13 @@ def test_move_root_artifacts_missing_report(tmp_path: Path, capsys):
   # Only create matrix
   create_shard(raw_dir, f"shard-matrix-{job_id}", "matrix.json", {})
 
-  artifact_bundler_lib.move_root_artifacts(raw_dir, final_dir, job_id)
+  with caplog.at_level(logging.INFO):
+    artifact_bundler_lib.move_root_artifacts(raw_dir, final_dir, job_id)
 
   assert (final_dir / "matrix.json").exists()
   assert not (final_dir / "benchmark_report.md").exists()
 
-  captured = capsys.readouterr()
-  assert "No report artifact found" in captured.out
+  assert "No report artifact found" in caplog.text
 
 
 # --- Tests for Benchmark Processing ---

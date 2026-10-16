@@ -14,12 +14,14 @@
 
 """Library for publishing benchmark results to Google Cloud Pub/Sub."""
 
-import sys
+import logging
 from collections.abc import Sequence
 from concurrent.futures import as_completed
 from google.cloud import pubsub_v1
 from bap_proto import benchmark_result_pb2
 from google.protobuf import json_format
+
+logger = logging.getLogger(__name__)
 
 
 def publish_messages(
@@ -33,8 +35,10 @@ def publish_messages(
   publisher = pubsub_v1.PublisherClient()
   topic_path = publisher.topic_path(project_id, topic_id)
 
-  print(f"Targeting Pub/Sub topic: {topic_path}.")
-  print(f"Publishing {len(messages)} messages with repo attribute: {repo_name}.")
+  logger.info("Targeting Pub/Sub topic: %s.", topic_path)
+  logger.info(
+    "Publishing %d messages with repo attribute: %s.", len(messages), repo_name
+  )
 
   futures = []
   success_count = 0
@@ -45,18 +49,21 @@ def publish_messages(
       future = publisher.publish(topic_path, data, repo=repo_name)
       futures.append(future)
     except Exception as e:
-      print(f"ERROR: Failed to prepare message for publishing: {e}", file=sys.stderr)
+      logger.error("Failed to prepare message for publishing: %s", e)
 
   # Wait for publications to complete
   for future in as_completed(futures):
     try:
       message_id = future.result(timeout=30)
       success_count += 1
-      print(
-        f"Published message {success_count}/{len(messages)} (Message ID: {message_id})."
+      logger.info(
+        "Published message %d/%d (Message ID: %s).",
+        success_count,
+        len(messages),
+        message_id,
       )
     except Exception as e:
-      print(f"ERROR: Failed to publish message: {e}", file=sys.stderr)
+      logger.error("Failed to publish message: %s", e)
 
   if success_count < len(messages):
     raise RuntimeError(

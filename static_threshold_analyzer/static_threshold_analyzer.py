@@ -17,6 +17,7 @@
 import argparse
 from collections.abc import Mapping
 import json
+import logging
 from pathlib import Path
 import sys
 from google.protobuf import json_format
@@ -25,7 +26,10 @@ from bap_proto import benchmark_result_pb2
 from static_threshold_analyzer.static_threshold_analyzer_lib import (
   StaticAnalyzer,
 )
+from utils import logging_config
 from utils import markdown_formatter
+
+logger = logging.getLogger(__name__)
 
 
 def load_results(
@@ -49,6 +53,7 @@ def load_results(
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(
     description="Analyze static threshold benchmark results."
   )
@@ -133,10 +138,10 @@ def main():
   sections.append(f"**Global Status:** {'🟢 PASS' if global_success else '🔴 FAIL'}")
   report_content = "\n\n".join(sections)
   args.output_file.write_text(report_content)
-  print(f"Report written to {args.output_file}")
+  logger.info("Report written to %s", args.output_file)
 
   if not global_success:
-    print("Regressions detected!", file=sys.stderr)
+    logger.error("Regressions detected!")
     sys.exit(1)
 
 

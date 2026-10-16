@@ -21,6 +21,7 @@ py_binary(
     main = "run_benchmark_summary_v1.py",
     srcs = ["run_benchmark_summary_v1.py"],
     deps = [
+        "//utils:logging_config",
         "@pypi//tensorboard",
     ],
 )
@@ -30,6 +31,7 @@ py_binary(
     main = "run_benchmark_summary_v2.py",
     srcs = ["run_benchmark_summary_v2.py"],
     deps = [
+        "//utils:logging_config",
         "@pypi//tensorflow",
         "@pypi//setuptools"
     ],
@@ -40,6 +42,7 @@ py_binary(
     main = "run_benchmark_tensorboardx.py",
     srcs = ["run_benchmark_tensorboardx.py"],
     deps = [
+        "//utils:logging_config",
         "@pypi//tensorboardx",
     ],
 )
