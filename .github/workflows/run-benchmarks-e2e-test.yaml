@@ -49,6 +49,11 @@ on:
         required: false
         type: string
         default: ""
+      halt_for_connection:
+        description: "Should this workflow run wait for a remote connection?"
+        required: false
+        type: boolean
+        default: false
 
 # Cancel any previous runs on the same branch when a new commit is pushed.
 concurrency:
@@ -71,6 +76,7 @@ jobs:
       custom_metadata: ${{ inputs.custom_metadata }}
       benchmark_filter: ${{ inputs.benchmark_filter }}
       environment_filter: ${{ inputs.environment_filter }}
+      halt_for_connection: ${{ inputs.halt_for_connection || false }}
 
   run_ab_e2e_test:
     name: A/B mode E2E test
@@ -86,6 +92,7 @@ jobs:
       ab_mode: true
       post_pr_comment: true
       custom_metadata: ${{ inputs.custom_metadata }}
+      halt_for_connection: ${{ inputs.halt_for_connection || false }}
 
   run_custom_env_e2e_test:
     name: Custom env E2E test
@@ -102,3 +109,4 @@ jobs:
         E2E_TEST_VAR=hello_from_e2e_test
         ANOTHER_VAR=123
       custom_metadata: ${{ inputs.custom_metadata }}
+      halt_for_connection: ${{ inputs.halt_for_connection || false }}
