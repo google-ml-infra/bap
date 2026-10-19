@@ -182,7 +182,7 @@ benchmarks {
 
   environment_configs {
     id: "cpu_standard"
-    runner_label: "linux-x86-n2-32"
+    runner_label: "linux-x86-n4-16"
     container_image: "us-docker.pkg.dev/my-project/images/cpu-test:latest"
 
     # Environment-specific build flags

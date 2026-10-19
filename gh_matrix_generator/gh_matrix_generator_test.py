@@ -36,7 +36,7 @@ VALID_SUITE_PBTXT = """
       }
       environment_configs {
         id: "basic_cpu"
-        runner_label: "linux-x86-n2-32"
+        runner_label: "linux-x86-n4-16"
         container_image: "gcr.io/testing/cpu-container:latest"
         tags: ["presubmit", "postsubmit", "cpu"]
         workload_action_inputs { key: "runtime_flags_hw" value: "--precision=fp32" }
@@ -83,7 +83,7 @@ INVALID_SUITE_MISSING_ID_PBTXT = """
         action: "./ml_actions/actions/workload_executors/bazel"
       }
       environment_configs {
-        runner_label: "linux-x86-n2-32"
+        runner_label: "linux-x86-n4-16"
         container_image: "gcr.io/testing/cpu-container:latest"
         tags: ["presubmit"]
       }
@@ -234,7 +234,7 @@ def test_generate_matrix_content_correctness():
   assert cpu_entry["workflow_type"] == "PRESUBMIT"
 
   assert cpu_entry["environment_config"]["id"] == "basic_cpu"
-  assert cpu_entry["environment_config"]["runner_label"] == "linux-x86-n2-32"
+  assert cpu_entry["environment_config"]["runner_label"] == "linux-x86-n4-16"
   assert (
     cpu_entry["environment_config"]["container_image"]
     == "gcr.io/testing/cpu-container:latest"
@@ -487,7 +487,7 @@ def test_generate_matrix_environment_specific_metrics():
       }
       environment_configs {
         id: "cpu_env"
-        runner_label: "linux-x86-n2-32"
+        runner_label: "linux-x86-n4-16"
         container_image: "gcr.io/testing/cpu-container:latest"
         metrics {
           name: "top_level_metric"
