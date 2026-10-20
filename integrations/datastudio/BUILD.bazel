@@ -14,6 +14,7 @@
 
 load("@rules_pkg//:pkg.bzl", "pkg_tar")
 load("@rules_oci//oci:defs.bzl", "oci_image", "oci_push")
+load("@rules_python//python:defs.bzl", "py_binary", "py_test")
 
 py_binary(
     name = "main",
