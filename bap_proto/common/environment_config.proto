@@ -24,7 +24,7 @@ message EnvironmentConfig {
   // REQUIRED: A unique, stable identifier for this environment configuration (e.g. "gpu_l4_standard").
   string id = 1 [(buf.validate.field).string.min_len = 1];
 
-  // REQUIRED: The GitHub Actions runner label to request (e.g. "linux-x86-n2-32").
+  // REQUIRED: The GitHub Actions runner label to request (e.g. "linux-x86-n4-16").
   string runner_label = 2 [(buf.validate.field).string.min_len = 1];
 
   // REQUIRED: The container image to execute the workload inside.

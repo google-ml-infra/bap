@@ -72,7 +72,7 @@ def main():
   parser.add_argument("--commit_sha", required=True)
   parser.add_argument("--github_run_id", required=True)
   parser.add_argument("--workflow_type", required=True, help="e.g. PRESUBMIT")
-  parser.add_argument("--runner_label", required=True, help="e.g. linux-x86-n2-32")
+  parser.add_argument("--runner_label", required=True, help="e.g. linux-x86-n4-16")
   parser.add_argument("--branch", required=True, help="e.g. main")
   parser.add_argument("--run_url", required=True, help="GitHub Actions Run URL")
   parser.add_argument(
