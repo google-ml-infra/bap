@@ -1,22 +1,23 @@
 [project]
-name = "ml-actions-benchmarking"
+name = "bap"
 version = "0.1.0"
 requires-python = "~=3.11"
 
 dependencies = [
-    "protovalidate == 2.0.0",
-    "tensorflow",
-    "numpy",
-    "tensorboard",
-    "tensorboardx",
-    "google-cloud-pubsub",
-    "tabulate",
-    "google-cloud-bigquery",
-    "protobuf",
+    "cloudevents",
     "functions-framework",
+    "google-cloud-bigquery",
+    "google-cloud-pubsub",
+    "numpy",
+    "protobuf",
+    "protovalidate",
+    "tabulate",
+    "tensorboard",
 ]
 
 [project.optional-dependencies]
 test = [
-    "pytest"
+    "pytest",
+    "tensorboardx",
+    "tensorflow",
 ]

@@ -23,8 +23,8 @@ import sys
 import re
 from collections.abc import Mapping, Sequence
 import numpy as np
-import tensorflow as tf
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+from tensorboard.util import tensor_util
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
 
@@ -123,7 +123,9 @@ class TensorBoardParser:
         # Stored in `tensor` field, accessed via .Tensors()
         elif tag in available_tensors:
           events = accumulator.Tensors(tag)
-          raw_data[tag] = [tf.make_ndarray(e.tensor_proto).item() for e in events]
+          raw_data[tag] = [
+            tensor_util.make_ndarray(e.tensor_proto).item() for e in events
+          ]
       except Exception as e:
         print(f"Warning: Failed to parse metric '{tag}'. Error: {e}", file=sys.stderr)
 
