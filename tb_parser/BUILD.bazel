@@ -14,7 +14,12 @@
 
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_applicable_licenses = ["//:license"],
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
 
 py_library(
     name = "tb_parser_lib",
@@ -22,6 +27,7 @@ py_library(
     deps = [
         "//bap_proto:benchmark_result_py_proto",
         "//bap_proto/common:metric_py_proto",
+        "//utils:metric_parser",
         "@pypi//numpy",
         "@pypi//tensorboard",
         "@pypi//setuptools",
