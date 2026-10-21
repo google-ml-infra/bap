@@ -18,11 +18,11 @@ Library for performing static threshold analysis on a benchmark result.
 
 from collections.abc import Sequence
 import logging
-import re
 from typing import TypedDict
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
 from utils import markdown_formatter
+from utils import metric_parser
 
 logger = logging.getLogger(__name__)
 
@@ -81,17 +81,11 @@ def _resolve_matched_metrics(
   result_map: ResultMap,
 ) -> list[str]:
   """Resolves concrete metric names matching the spec identifier and stat."""
-  id_type = metric_spec.WhichOneof("identifier")
-  if id_type == "name":
-    return [metric_spec.name] if (metric_spec.name, stat_name) in result_map else []
-  elif id_type == "pattern":
-    regex = re.compile(metric_spec.pattern)
-    return [
-      m_name
-      for m_name, s_name in result_map.keys()
-      if s_name == stat_name and regex.search(m_name)
-    ]
-  return []
+  return [
+    m_name
+    for m_name, s_name in result_map.keys()
+    if s_name == stat_name and metric_parser.matches_metric_spec(metric_spec, m_name)
+  ]
 
 
 def _evaluate_metric(
@@ -178,8 +172,7 @@ class StaticAnalyzer:
         matched_metrics = _resolve_matched_metrics(metric_spec, stat_name, result_map)
 
         if not matched_metrics:
-          id_type = metric_spec.WhichOneof("identifier")
-          identifier = metric_spec.pattern if id_type == "pattern" else metric_spec.name
+          identifier = metric_parser.get_metric_identifier(metric_spec)
           logger.warning(
             "Skipping check for %s (%s): Computed statistic not found in artifact.",
             identifier,
