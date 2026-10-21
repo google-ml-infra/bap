@@ -79,7 +79,8 @@ def validate_action_string(action_id: str) -> tuple[bool, str]:
   if any(c.isspace() for c in action_id):
     return False, f"Malformed reference (contains whitespace): {action_id}"
 
-  if "../" in action_id:
+  path_part = action_id.split("@", 1)[0]
+  if ".." in path_part.split("/"):
     return False, f"Path traversal detected: {action_id}"
 
   if "\\" in action_id:
