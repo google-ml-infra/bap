@@ -14,6 +14,7 @@
 
 """Tests for the TensorBoard parser library."""
 
+import logging
 from unittest import mock
 import sys
 import pytest
@@ -158,20 +159,19 @@ def test_all_stats_computed_correctly(
   assert pytest.approx(stat_result.value.value) == expected_value
 
 
-def test_read_metrics_handles_io_error(mock_event_accumulator, capsys):
+def test_read_metrics_handles_io_error(mock_event_accumulator, caplog):
   """Tests that the script exits if EventAccumulator.Reload() fails."""
   mock_event_accumulator.Reload.side_effect = Exception("Fake I/O error")
 
   parser = tb_parser_lib.TensorBoardParser([])
-  with pytest.raises(SystemExit):
+  with caplog.at_level(logging.ERROR), pytest.raises(SystemExit):
     parser._read_tensorboard_metrics("log_dir_with_io_error")
 
-  captured = capsys.readouterr()
-  assert "Error: EventAccumulator failed to load logs" in captured.err
-  assert "Fake I/O error" in captured.err
+  assert "EventAccumulator failed to load logs" in caplog.text
+  assert "Fake I/O error" in caplog.text
 
 
-def test_parse_and_compute_skips_missing_metric(mock_event_accumulator, capsys):
+def test_parse_and_compute_skips_missing_metric(mock_event_accumulator, caplog):
   """Tests that a metric in the specs but not the logs is skipped."""
   # Manifest asks for metric_a and metric_b.
   specs = _create_metric_specs("metric_a", "ms", [metric_pb2.Stat.MEAN])
@@ -188,15 +188,15 @@ def test_parse_and_compute_skips_missing_metric(mock_event_accumulator, capsys):
   mock_event_accumulator.Tensors.return_value = [_create_fake_tensor_event(10.0)]
 
   parser = tb_parser_lib.TensorBoardParser(specs)
-  results = parser.parse_and_compute("fake_log_dir")
+  with caplog.at_level(logging.WARNING):
+    results = parser.parse_and_compute("fake_log_dir")
 
   # The parser should successfully compute stats for metric_a.
   assert len(results) == 1
   assert results[0].metric_name == "metric_a"
 
-  # It should also print a clear warning for the missing metric_b.
-  captured = capsys.readouterr()
-  assert "Warning: Metric 'metric_b' not found in logs." in captured.err
+  # It should also log a clear warning for the missing metric_b.
+  assert "Metric 'metric_b' not found in logs." in caplog.text
 
 
 def test_parse_and_compute_empty_metrics(mock_event_accumulator):
@@ -242,15 +242,15 @@ def test_parse_and_compute_regex_expansion(mock_event_accumulator):
   assert results[1].value.value == 10.0
 
 
-def test_parse_and_compute_missing_logs_allowed(mock_event_accumulator, capsys):
+def test_parse_and_compute_missing_logs_allowed(mock_event_accumulator, caplog):
   """Tests that missing or invalid logs return empty results when allow_missing_logs=True."""
   mock_event_accumulator.Reload.side_effect = Exception("No logs found")
   specs = _create_metric_specs("wall_time", "ms", [metric_pb2.Stat.MEAN])
   parser = tb_parser_lib.TensorBoardParser(specs)
-  results = parser.parse_and_compute("fake_dir", allow_missing_logs=True)
+  with caplog.at_level(logging.WARNING):
+    results = parser.parse_and_compute("fake_dir", allow_missing_logs=True)
   assert results == []
-  captured = capsys.readouterr()
-  assert "Warning: Failed to load logs" in captured.err
+  assert "Failed to load logs" in caplog.text
 
 
 if __name__ == "__main__":

@@ -14,6 +14,7 @@
 
 import argparse
 import json
+import logging
 import string
 import sys
 from dataclasses import dataclass
@@ -23,6 +24,9 @@ from pathlib import Path
 
 from google.protobuf import text_format
 from bap_proto import benchmark_registry_pb2
+from utils import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityValidationError(Exception):
@@ -52,10 +56,10 @@ def load_security_policy() -> SecurityPolicy:
         data = json.load(f)
         return SecurityPolicy(trusted_orgs=data.get("trusted_orgs", []))
   except Exception as e:
-    print(f"Error loading security policy resource: {e}")
+    logger.error("Error loading security policy resource: %s", e)
 
   # Fail if no policy file is found or if it's unreadable
-  print("Error: Could not find or read security_policy.json in package resources.")
+  logger.error("Could not find or read security_policy.json in package resources.")
   sys.exit(1)
 
 
@@ -176,6 +180,7 @@ def validate_external_file(file_path: Path) -> int:
 
 
 def main() -> None:
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(
     description="Validates a benchmark registry for SSCI security compliance."
   )
@@ -189,19 +194,19 @@ def main() -> None:
   try:
     action_count = validate_external_file(args.registry_path)
     if action_count == 0:
-      print(f"Note: No actions found in registry: {args.registry_path}")
+      logger.info("No actions found in registry: %s", args.registry_path)
     else:
-      print(f"Security Validation PASSED ({action_count} actions checked).")
+      logger.info("Security Validation PASSED (%d actions checked).", action_count)
   except FileNotFoundError as e:
-    print(f"Error: {e}", file=sys.stderr)
+    logger.error("%s", e)
     sys.exit(1)
   except SecurityValidationError as e:
-    print("\nSecurity Validation FAILED:", file=sys.stderr)
+    logger.error("Security Validation FAILED:")
     for err in e.errors:
-      print(f"  - {err}", file=sys.stderr)
+      logger.error("  - %s", err)
     sys.exit(1)
   except Exception as e:
-    print(f"Error: {e}", file=sys.stderr)
+    logger.error("%s", e)
     sys.exit(1)
 
 
