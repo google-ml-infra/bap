@@ -14,14 +14,20 @@
 
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
+package(
+    default_applicable_licenses = ["//:license"],
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
+
 py_library(
     name = "validate_registry_lib",
-    srcs = ["validate_registry.py"],
+    srcs = ["validate_registry_lib.py"],
     data = ["security_policy.json"],
-    visibility = ["//visibility:public"],
     deps = [
-        "@protobuf//:protobuf_python",
         "//bap_proto:benchmark_registry_py_proto",
+        "@protobuf//:protobuf_python",
     ],
 )
 
@@ -36,10 +42,8 @@ py_binary(
 py_test(
     name = "validate_registry_test",
     srcs = ["validate_registry_test.py"],
-    data = ["security_policy.json"] + glob(["validate_registry_test/*.pbtxt"]),
     deps = [
         ":validate_registry_lib",
-        "//bap_proto/common:workflow_type_py_proto",
-        "@pypi//pytest:pkg",
+        "@pypi//pytest",
     ],
 )

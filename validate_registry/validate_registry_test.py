@@ -17,8 +17,8 @@ from unittest import mock
 
 import pytest
 
-from validate_registry import validate_registry
-from validate_registry.validate_registry import (
+from validate_registry import validate_registry_lib
+from validate_registry.validate_registry_lib import (
   SecurityValidationError,
   validate_action_string,
   validate_external_file,
@@ -28,7 +28,7 @@ from validate_registry.validate_registry import (
 @pytest.fixture(autouse=True)
 def clear_cache():
   """Fixture to clear the cached security policy before each test."""
-  validate_registry.load_security_policy.cache_clear()
+  validate_registry_lib.load_security_policy.cache_clear()
   yield
 
 
