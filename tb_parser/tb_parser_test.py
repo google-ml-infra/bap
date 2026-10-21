@@ -18,11 +18,12 @@ from unittest import mock
 import sys
 import pytest
 import numpy as np
-import tensorflow as tf
 from tensorboard.backend.event_processing.event_accumulator import (
   TensorEvent,
   ScalarEvent,
 )
+from tensorboard.compat.proto import types_pb2
+from tensorboard.util import tensor_util
 from bap_proto.common import metric_pb2
 from tb_parser import tb_parser_lib
 
@@ -47,7 +48,7 @@ def _create_fake_tensor_event(value: float) -> TensorEvent:
   return TensorEvent(
     wall_time=0.0,
     step=0,
-    tensor_proto=tf.make_tensor_proto(value, dtype=tf.float32),
+    tensor_proto=tensor_util.make_tensor_proto(value, dtype=types_pb2.DT_FLOAT),
   )
 
 

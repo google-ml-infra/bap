@@ -29,7 +29,9 @@ click==8.4.2
     #   functions-framework
     #   uvicorn
 cloudevents==1.12.0
-    # via functions-framework
+    # via
+    #   bap (pyproject.toml)
+    #   functions-framework
 cryptography==49.0.0
     # via
     #   google-auth
@@ -41,7 +43,7 @@ flask==3.1.3
 flatbuffers==25.12.19
     # via tensorflow
 functions-framework==3.10.2
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 gast==0.7.0
     # via tensorflow
 google-api-core[grpc]==2.29.0
@@ -56,11 +58,11 @@ google-auth[pyopenssl]==2.47.0
     #   google-cloud-core
     #   google-cloud-pubsub
 google-cloud-bigquery==3.42.2
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 google-cloud-core==2.6.0
     # via google-cloud-bigquery
 google-cloud-pubsub==2.34.0
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 google-crc32c==1.8.0
     # via google-resumable-media
 google-pasta==0.2.0
@@ -140,9 +142,9 @@ namex==0.1.0
     # via keras
 numpy==2.4.1
     # via
+    #   bap (pyproject.toml)
     #   h5py
     #   keras
-    #   ml-actions-benchmarking (pyproject.toml)
     #   ml-dtypes
     #   tensorboard
     #   tensorboardx
@@ -183,19 +185,19 @@ proto-plus==1.27.0
     #   google-cloud-pubsub
 protobuf==6.33.4
     # via
+    #   bap (pyproject.toml)
     #   google-api-core
     #   google-cloud-pubsub
     #   googleapis-common-protos
     #   grpc-google-iam-v1
     #   grpcio-status
-    #   ml-actions-benchmarking (pyproject.toml)
     #   proto-plus
     #   protovalidate
     #   tensorboard
     #   tensorboardx
     #   tensorflow
 protovalidate==1.2.0
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 pyasn1==0.6.1
     # via
     #   pyasn1-modules
@@ -211,7 +213,7 @@ pygments==2.19.2
 pyopenssl==26.3.0
     # via google-auth
 pytest==9.0.2
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 python-dateutil==2.9.0.post0
     # via
     #   google-cloud-bigquery
@@ -236,17 +238,17 @@ six==1.17.0
 starlette==1.3.1
     # via functions-framework
 tabulate==0.10.0
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 tensorboard==2.20.0
     # via
-    #   ml-actions-benchmarking (pyproject.toml)
+    #   bap (pyproject.toml)
     #   tensorflow
 tensorboard-data-server==0.7.2
     # via tensorboard
 tensorboardx==2.6.4
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 tensorflow==2.20.0
-    # via ml-actions-benchmarking (pyproject.toml)
+    # via bap (pyproject.toml)
 termcolor==3.3.0
     # via tensorflow
 typing-extensions==4.15.0
