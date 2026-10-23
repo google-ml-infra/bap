@@ -17,8 +17,8 @@ from unittest import mock
 
 import pytest
 
-from validate_registry import validate_registry
-from validate_registry.validate_registry import (
+from validate_registry import validate_registry_lib
+from validate_registry.validate_registry_lib import (
   SecurityValidationError,
   validate_action_string,
   validate_external_file,
@@ -28,7 +28,7 @@ from validate_registry.validate_registry import (
 @pytest.fixture(autouse=True)
 def clear_cache():
   """Fixture to clear the cached security policy before each test."""
-  validate_registry.load_security_policy.cache_clear()
+  validate_registry_lib.load_security_policy.cache_clear()
   yield
 
 
@@ -45,9 +45,14 @@ def test_missing_policy_exits():
 def test_local_actions():
   """Verifies that local actions are trusted and path traversal is blocked."""
   assert validate_action_string("./ml_actions/bazel")[0] is True
+  assert validate_action_string("./.../some/foo")[0] is True
 
   # Path traversal in local action
   valid, msg = validate_action_string("./../secrets")
+  assert valid is False
+  assert "Path traversal" in msg
+
+  valid, msg = validate_action_string("./ml_actions/..")
   assert valid is False
   assert "Path traversal" in msg
 

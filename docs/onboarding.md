@@ -125,7 +125,7 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 #### Python Executor
 
 - Local reference: `./ml_actions/./actions/workload_executors/python`
-- Remote reference: `google-ml-infra/bap/./actions/workload_executors/python@<ref>`
+- Remote reference: `google-ml-infra/bap/./actions/workload_executors/python@<commit-sha>`
 
 | Input | Required | Description |
 | :--- | :--- | :--- |
@@ -141,7 +141,7 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 #### Bazel Executor
 
 - Local reference: `./ml_actions/./actions/workload_executors/bazel`
-- Remote reference: `google-ml-infra/bap/./actions/workload_executors/bazel@<ref>`
+- Remote reference: `google-ml-infra/bap/./actions/workload_executors/bazel@<commit-sha>`
 
 | Input | Required | Description |
 | :--- | :--- | :--- |
@@ -153,6 +153,17 @@ Note: The platform performs a simple dictionary merge on inputs. If a key in `en
 | `teardown` | No | If `"true"`, runs `bazel clean --expunge` at the end of the run to reclaim the entire output base (including caches and external repos). |
 
 **Note for Multi-Host Workloads**: If your benchmark runs in a multi-host distributed environment (e.g., multi-node TPU K8s JobSets), Bazel strips out Kubernetes networking variables by default. You must explicitly pass these variables into the sandbox so your script can read them. Add `--action_env=JOB_COMPLETION_INDEX` to your `bazel_run_flags` to expose the pod rank, along with any other custom distributed coordination variables (e.g., `--action_env=JAX_COORDINATOR_ADDRESS`).
+
+#### Custom Executor
+
+If you define your own custom GitHub Action to execute workloads, you can reference it either locally (from your repository) or remotely:
+
+1. **Local Action (in your repository)**:
+   - Prefix the path with `./user_repo/` relative to your repository root (e.g., `./user_repo/.github/actions/my_custom_executor`), as BAP checks out your repository under `user_repo`.
+   - Local actions starting with `./` do not require organization allowlisting or SHA pinning.
+2. **Remote Action (`<org>/<repo>/<path>@<sha>`)**:
+   - **SHA Pinning**: Remote actions must be pinned to a full 40-character commit SHA or a `sha256:` digest (e.g., `my-org/my-repo/actions/my_executor@0123456789abcdef0123456789abcdef01234567`). Branch names and tags (such as `@main` or `@v1`) are rejected by registry security validation.
+   - **Trusted Organization Allowlist**: The GitHub organization (`<org>`) must be present in BAP's [`security_policy.json`](https://github.com/google-ml-infra/bap/blob/main/validate_registry/security_policy.json) `trusted_orgs` allowlist. To add your organization, please [submit a trusted organization request](https://github.com/google-ml-infra/bap/issues/new?template=trusted-org-request.md) or open a pull request updating `validate_registry/security_policy.json`.
 
 ### Defining metrics
 
