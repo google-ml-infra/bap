@@ -391,9 +391,7 @@ jobs:
           # Inject HF_TOKEN secret if provided.
           if [[ -n "$SECRET_HF_TOKEN" ]]; then
             echo "Injecting HF_TOKEN secret..."
-            set +x
             printf "HF_TOKEN=%s\n" "$SECRET_HF_TOKEN" >> "$GITHUB_ENV"
-            set -x
           fi
 
           # Inject custom environment variables if provided.
