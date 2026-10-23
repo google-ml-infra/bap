@@ -15,13 +15,18 @@
 """CLI entrypoint for validating a benchmark registry for SSCI security compliance."""
 
 import argparse
-import sys
+import logging
 from pathlib import Path
+import sys
 
+from utils import logging_config
 from validate_registry import validate_registry_lib
+
+logger = logging.getLogger(__name__)
 
 
 def main() -> None:
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(
     description="Validates a benchmark registry for SSCI security compliance."
   )
@@ -35,19 +40,19 @@ def main() -> None:
   try:
     action_count = validate_registry_lib.validate_external_file(args.registry_path)
     if action_count == 0:
-      print(f"Note: No actions found in registry: {args.registry_path}")
+      logger.info("No actions found in registry: %s", args.registry_path)
     else:
-      print(f"Security Validation PASSED ({action_count} actions checked).")
+      logger.info("Security Validation PASSED (%d actions checked).", action_count)
   except FileNotFoundError as e:
-    print(f"Error: {e}", file=sys.stderr)
+    logger.error("%s", e)
     sys.exit(1)
   except validate_registry_lib.SecurityValidationError as e:
-    print("\nSecurity Validation FAILED:", file=sys.stderr)
+    logger.error("Security Validation FAILED:")
     for err in e.errors:
-      print(f"  - {err}", file=sys.stderr)
+      logger.error("  - %s", err)
     sys.exit(1)
   except Exception as e:
-    print(f"Error: {e}", file=sys.stderr)
+    logger.error("%s", e)
     sys.exit(1)
 
 

@@ -21,9 +21,11 @@ from gh_matrix_generator.gh_matrix_generator_lib import (
   MatrixGenerator,
   load_and_validate_suite_from_pbtxt,
 )
+from utils import logging_config
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(description="Generate GitHub Actions matrix.")
   parser.add_argument(
     "--registry_file",

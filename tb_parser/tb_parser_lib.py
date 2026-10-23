@@ -19,14 +19,17 @@ computes summary statistics (e.g., Mean, P99) as defined in the provided
 MetricSpecs. It outputs a list of ComputedStat protos.
 """
 
+import logging
 import sys
 import re
 from collections.abc import Mapping, Sequence
 import numpy as np
-import tensorflow as tf
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
+from tensorboard.util import tensor_util
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
+
+logger = logging.getLogger(__name__)
 
 MetricSpecs = Sequence[metric_pb2.MetricSpec]
 
@@ -82,15 +85,17 @@ class TensorBoardParser:
       accumulator.Reload()
     except Exception as e:
       if allow_missing_logs:
-        print(
-          f"Warning: Failed to load logs from '{tblog_dir}' for failed run. Error: {e}",
-          file=sys.stderr,
+        logger.warning(
+          "Failed to load logs from '%s' for failed run. Error: %s",
+          tblog_dir,
+          e,
         )
         return {}
-      print(
-        f"Error: EventAccumulator failed to load logs from '{tblog_dir}'. "
-        f"Are event files present and valid? Error: {e}",
-        file=sys.stderr,
+      logger.error(
+        "EventAccumulator failed to load logs from '%s'. "
+        "Are event files present and valid? Error: %s",
+        tblog_dir,
+        e,
       )
       sys.exit(1)
 
@@ -123,9 +128,11 @@ class TensorBoardParser:
         # Stored in `tensor` field, accessed via .Tensors()
         elif tag in available_tensors:
           events = accumulator.Tensors(tag)
-          raw_data[tag] = [tf.make_ndarray(e.tensor_proto).item() for e in events]
+          raw_data[tag] = [
+            tensor_util.make_ndarray(e.tensor_proto).item() for e in events
+          ]
       except Exception as e:
-        print(f"Warning: Failed to parse metric '{tag}'. Error: {e}", file=sys.stderr)
+        logger.warning("Failed to parse metric '%s'. Error: %s", tag, e)
 
     return raw_data
 
@@ -152,9 +159,7 @@ class TensorBoardParser:
 
       if not matched_tags:
         failed_id = metric.pattern if id_type == "pattern" else metric.name
-        print(
-          f"Warning: Metric '{failed_id}' not found in logs. Skipping.", file=sys.stderr
-        )
+        logger.warning("Metric '%s' not found in logs. Skipping.", failed_id)
         continue
 
       for tag_name in matched_tags:
@@ -164,7 +169,7 @@ class TensorBoardParser:
           stat_name = metric_pb2.Stat.Name(stat_enum)
 
           if stat_name not in STAT_FN_MAP:
-            print(f"Warning: Unknown statistic {stat_name}. Skipping.", file=sys.stderr)
+            logger.warning("Unknown statistic %s. Skipping.", stat_name)
             continue
 
           computed_value = round(

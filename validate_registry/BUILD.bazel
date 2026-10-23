@@ -36,6 +36,7 @@ py_binary(
     srcs = ["validate_registry.py"],
     deps = [
         ":validate_registry_lib",
+        "//utils:logging_config",
     ],
 )
 

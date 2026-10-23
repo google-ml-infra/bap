@@ -15,6 +15,7 @@
 """Library for validating a benchmark registry for SSCI security compliance."""
 
 import json
+import logging
 import string
 import sys
 from dataclasses import dataclass
@@ -24,6 +25,8 @@ from pathlib import Path
 
 from google.protobuf import text_format
 from bap_proto import benchmark_registry_pb2
+
+logger = logging.getLogger(__name__)
 
 
 class SecurityValidationError(Exception):
@@ -53,10 +56,10 @@ def load_security_policy() -> SecurityPolicy:
         data = json.load(f)
         return SecurityPolicy(trusted_orgs=data.get("trusted_orgs", []))
   except Exception as e:
-    print(f"Error loading security policy resource: {e}")
+    logger.error("Error loading security policy resource: %s", e)
 
   # Fail if no policy file is found or if it's unreadable
-  print("Error: Could not find or read security_policy.json in package resources.")
+  logger.error("Could not find or read security_policy.json in package resources.")
   sys.exit(1)
 
 

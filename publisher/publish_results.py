@@ -15,13 +15,16 @@
 """Publishes benchmark results to Google Cloud Pub/Sub."""
 
 import argparse
+import logging
 import pathlib
-import sys
 from google.protobuf import json_format
 from protovalidate import validate, ValidationError
 from buf.validate.validate_pb2 import Violation
 from bap_proto import benchmark_result_pb2
 from publisher import publish_results_lib
+from utils import logging_config
+
+logger = logging.getLogger(__name__)
 
 
 def _format_validation_error(violation: Violation) -> str:
@@ -34,6 +37,7 @@ def _format_validation_error(violation: Violation) -> str:
 
 
 def main():
+  logging_config.setup_logging()
   parser = argparse.ArgumentParser(
     description="Publishes benchmark results to Google Cloud Pub/Sub."
   )
@@ -71,13 +75,13 @@ def main():
   files = list(args.benchmark_results_dir.rglob("*.json"))
 
   if not files:
-    print("WARNING: No benchmark result files found to publish.", file=sys.stderr)
+    logger.warning("No benchmark result files found to publish.")
     return
 
   valid_messages = []
 
   # Parse and validate
-  print(f"Found {len(files)} files. Validating.")
+  logger.info("Found %d files. Validating.", len(files))
   for file_path in files:
     try:
       json_data = file_path.read_text()

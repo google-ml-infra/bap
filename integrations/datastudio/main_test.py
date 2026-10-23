@@ -174,7 +174,7 @@ def test_subscribe_validation_error(mock_get_validator, mock_parse):
     main.subscribe(cloud_event)
 
 
-@patch("integrations.datastudio.main.logging")
+@patch("integrations.datastudio.main.logger")
 @patch("integrations.datastudio.main.json_format.Parse")
 @patch("integrations.datastudio.main.get_validator")
 @patch("integrations.datastudio.main.get_team_github_repo")
@@ -190,7 +190,7 @@ def test_subscribe_success(
   mock_get_team_github_repo,
   mock_get_validator,
   mock_parse,
-  mock_logging,
+  mock_logger,
 ):
   """Tests successful processing and insertion into BigQuery."""
   payload_str = '{"some": "data"}'
@@ -234,8 +234,8 @@ def test_subscribe_success(
     assert rows[0]["workflow_type"] == "CONTINUOUS"
     assert rows[0]["payload"] == payload_str
 
-    mock_logging.info.assert_called_once()
-    assert "Successfully inserted row" in mock_logging.info.call_args[0][0]
+    mock_logger.info.assert_called_once()
+    assert "Successfully inserted row" in mock_logger.info.call_args[0][0]
 
 
 @patch("integrations.datastudio.main.json_format.Parse")
@@ -314,8 +314,8 @@ def test_subscribe_bq_insert_exception(
           main.subscribe(cloud_event)
 
 
-@patch("integrations.datastudio.main.logging")
-def test_subscribe_discard_different_repo(mock_logging):
+@patch("integrations.datastudio.main.logger")
+def test_subscribe_discard_different_repo(mock_logger):
   """Tests discarding messages when repo attribute does not match target repo."""
   payload_str = '{"some": "data"}'
   valid_json_b64 = base64.b64encode(payload_str.encode("utf-8")).decode("utf-8")
@@ -328,12 +328,12 @@ def test_subscribe_discard_different_repo(mock_logging):
   }
 
   main.subscribe(cloud_event)
-  mock_logging.warning.assert_called_once()
-  assert "Discarding message" in mock_logging.warning.call_args[0][0]
+  mock_logger.warning.assert_called_once()
+  assert "Discarding message" in mock_logger.warning.call_args[0][0]
 
 
-@patch("integrations.datastudio.main.logging")
-def test_subscribe_discard_missing_repo(mock_logging):
+@patch("integrations.datastudio.main.logger")
+def test_subscribe_discard_missing_repo(mock_logger):
   """Tests discarding messages when repo attribute is missing."""
   payload_str = '{"some": "data"}'
   valid_json_b64 = base64.b64encode(payload_str.encode("utf-8")).decode("utf-8")
@@ -341,8 +341,8 @@ def test_subscribe_discard_missing_repo(mock_logging):
   cloud_event.data = {"message": {"data": valid_json_b64}}
 
   main.subscribe(cloud_event)
-  mock_logging.warning.assert_called_once()
-  assert "Discarding message" in mock_logging.warning.call_args[0][0]
+  mock_logger.warning.assert_called_once()
+  assert "Discarding message" in mock_logger.warning.call_args[0][0]
 
 
 if __name__ == "__main__":
