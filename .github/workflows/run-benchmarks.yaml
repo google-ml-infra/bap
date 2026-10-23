@@ -114,6 +114,11 @@ on:
         required: false
         default: false
 
+    secrets:
+      HF_TOKEN:
+        description: "Optional Hugging Face token to inject into the workflow environment."
+        required: false
+
     outputs:
       job_id:
         description: "Unique identifier for the top-level job."
@@ -358,6 +363,7 @@ jobs:
         shell: bash
         env:
           CUSTOM_ENV_VARS: ${{ inputs.custom_env_vars }}
+          SECRET_HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
           echo "::group::Set up benchmark environment"
           set -euo pipefail
@@ -381,6 +387,14 @@ jobs:
             echo "WORKLOAD_ARTIFACTS_DIR=$WORKLOAD_ARTIFACTS_DIR"
             echo "WORKLOAD_METADATA_DIR=$WORKLOAD_METADATA_DIR"
           } >> "$GITHUB_ENV"
+
+          # Inject HF_TOKEN secret if provided.
+          if [[ -n "$SECRET_HF_TOKEN" ]]; then
+            echo "Injecting HF_TOKEN secret..."
+            set +x
+            printf "HF_TOKEN=%s\n" "$SECRET_HF_TOKEN" >> "$GITHUB_ENV"
+            set -x
+          fi
 
           # Inject custom environment variables if provided.
           if [[ -n "$CUSTOM_ENV_VARS" ]]; then

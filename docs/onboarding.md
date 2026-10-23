@@ -85,6 +85,14 @@ The reusable workflow supports the following inputs:
 | `custom_metadata` | No | `{}` | JSON string of metadata to append to the benchmark result. Overwrites static metadata from the registry but is overwritten by dynamic metadata from the workload. |
 | `halt_for_connection` | No | `false` | If `true`, halts the benchmark runner before workload execution and waits for a remote debugging connection. |
 
+### Workflow Secrets
+
+The reusable workflow supports the following optional secrets (passed via the `secrets:` block on the caller job):
+
+| Secret | Required | Description |
+| :--- | :--- | :--- |
+| `HF_TOKEN` | No | Hugging Face token to inject as `HF_TOKEN` into the runner environment. |
+
 ### Workflow Outputs
 
 The reusable workflow exposes the following outputs which can be used by downstream jobs in your caller workflow:
