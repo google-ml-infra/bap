@@ -14,6 +14,10 @@
 
 load("@rules_python//python:defs.bzl", "py_library", "py_test")
 
+package(default_applicable_licenses = ["//:license"])
+
+licenses(["notice"])
+
 py_library(
     name = "logging_config",
     srcs = ["logging_config.py"],
@@ -37,6 +41,15 @@ py_library(
     visibility = ["//:__subpackages__"],
     deps = [
         "//bap_proto/common:metric_py_proto",
+    ],
+)
+
+py_test(
+    name = "metric_parser_test",
+    srcs = ["metric_parser_test.py"],
+    deps = [
+        ":metric_parser",
+        "@pypi//pytest",
     ],
 )
 

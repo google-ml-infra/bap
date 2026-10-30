@@ -58,7 +58,7 @@ def make_result(
 
 def make_job_with_spec(
   config_id: str,
-  metric_name: str,
+  metric_spec: metric_pb2.MetricSpec,
   stat: metric_pb2.Stat,
   threshold: float | None = None,
   direction: metric_pb2.ImprovementDirection | None = None,
@@ -67,7 +67,7 @@ def make_job_with_spec(
 
   Args:
       config_id: The unique identifier for the benchmark job.
-      metric_name: The name of the metric to track (e.g., 'latency').
+      metric_spec: The MetricSpec proto (with name or pattern set).
       stat: The statistic to track (e.g., metric_pb2.Stat.MEAN).
       threshold: Optional regression threshold (e.g., 0.05 for 5%).
       direction: Optional improvement direction (e.g., SMALLER_IS_BETTER).
@@ -87,11 +87,13 @@ def make_job_with_spec(
       comp.improvement_direction = direction
     stat_spec.comparison.CopyFrom(comp)
 
-  # Create MetricSpec
-  metric_spec = metric_pb2.MetricSpec(name=metric_name, unit="ms")
-  metric_spec.stats.append(stat_spec)
+  spec = metric_pb2.MetricSpec()
+  spec.CopyFrom(metric_spec)
+  if not spec.unit:
+    spec.unit = "ms"
+  spec.stats.append(stat_spec)
 
-  job.metrics.append(metric_spec)
+  job.metrics.append(spec)
   return job
 
 
@@ -148,7 +150,7 @@ def test_get_comparison_config_specific():
   """Test retrieving specific thresholds from matrix map."""
   job = make_job_with_spec(
     "my_model",
-    "accuracy",
+    metric_pb2.MetricSpec(name="accuracy"),
     metric_pb2.Stat.MEAN,
     threshold=0.01,
     direction=metric_pb2.ImprovementDirection.GREATER,
@@ -160,6 +162,25 @@ def test_get_comparison_config_specific():
   )
 
   assert threshold == 0.01
+  assert direction == metric_pb2.ImprovementDirection.GREATER
+
+
+def test_get_comparison_config_pattern():
+  """Test retrieving thresholds when MetricSpec uses a regex pattern."""
+  job = make_job_with_spec(
+    "my_model",
+    metric_pb2.MetricSpec(pattern=r"torch_tpu/.*/throughput"),
+    metric_pb2.Stat.MEDIAN,
+    threshold=0.10,
+    direction=metric_pb2.ImprovementDirection.GREATER,
+  )
+  matrix = {"my_model": job}
+
+  threshold, direction = ab_analyzer_lib._get_comparison_config(
+    matrix, "my_model", "torch_tpu/resnet50/throughput", metric_pb2.Stat.MEDIAN
+  )
+
+  assert threshold == 0.10
   assert direction == metric_pb2.ImprovementDirection.GREATER
 
 
@@ -226,7 +247,7 @@ def test_generate_report_fail_accuracy():
   }
   job = make_job_with_spec(
     "test",
-    "accuracy",
+    metric_pb2.MetricSpec(name="accuracy"),
     metric_pb2.Stat.MEAN,
     direction=metric_pb2.ImprovementDirection.GREATER,
   )
@@ -360,6 +381,42 @@ def test_generate_report_renders_units():
   assert "100.0000 ms" in report
   assert "95.0000 ms" in report
   assert "latency <small>(MEAN)</small>" in report
+
+
+def test_generate_report_pattern_metric():
+  """Test that pattern-matched metrics use their configured threshold and direction."""
+  base = make_result(
+    "test",
+    {"torch_tpu/resnet50/throughput": {metric_pb2.Stat.MEAN: 100.0}},
+    "sha1",
+  )
+  exp = make_result(
+    "test",
+    {"torch_tpu/resnet50/throughput": {metric_pb2.Stat.MEAN: 95.0}},
+    "sha2",
+  )
+  results = {
+    "test": {
+      benchmark_job_pb2.AbTestGroup.BASELINE: base,
+      benchmark_job_pb2.AbTestGroup.EXPERIMENT: exp,
+    }
+  }
+  job = make_job_with_spec(
+    "test",
+    metric_pb2.MetricSpec(pattern=r"torch_tpu/.*/throughput"),
+    metric_pb2.Stat.MEAN,
+    threshold=0.02,
+    direction=metric_pb2.ImprovementDirection.GREATER,
+  )
+  matrix = {"test": job}
+
+  report, success = ab_analyzer_lib.generate_report(
+    results, matrix, "http://repo", "TestFlow"
+  )
+
+  assert not success
+  assert "2%" in report
+  assert "REGRESSION" in report
 
 
 if __name__ == "__main__":

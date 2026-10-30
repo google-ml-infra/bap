@@ -19,15 +19,15 @@ computes summary statistics (e.g., Mean, P99) as defined in the provided
 MetricSpecs. It outputs a list of ComputedStat protos.
 """
 
+from collections.abc import Mapping, Sequence
 import logging
 import sys
-import re
-from collections.abc import Mapping, Sequence
 import numpy as np
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 from tensorboard.util import tensor_util
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
+from utils import metric_parser
 
 logger = logging.getLogger(__name__)
 
@@ -106,16 +106,11 @@ class TensorBoardParser:
     all_available_tags = available_scalars | available_tensors
 
     # Resolve concrete tags to extract based on oneof identifier (name or pattern)
-    tags_to_extract: set[str] = set()
-    for spec in self.metric_specs:
-      id_type = spec.WhichOneof("identifier")
-      if id_type == "name":
-        if spec.name in all_available_tags:
-          tags_to_extract.add(spec.name)
-      elif id_type == "pattern":
-        regex = re.compile(spec.pattern)
-        matched = {t for t in all_available_tags if regex.search(t)}
-        tags_to_extract.update(matched)
+    tags_to_extract = {
+      tag
+      for tag in all_available_tags
+      if any(metric_parser.matches_metric_spec(spec, tag) for spec in self.metric_specs)
+    }
 
     for tag in tags_to_extract:
       try:
@@ -147,18 +142,12 @@ class TensorBoardParser:
     all_resolved_tags = set(raw_data.keys())
 
     for metric in self.metric_specs:
-      id_type = metric.WhichOneof("identifier")
-      matched_tags = []
-
-      if id_type == "name":
-        if metric.name in all_resolved_tags:
-          matched_tags = [metric.name]
-      elif id_type == "pattern":
-        regex = re.compile(metric.pattern)
-        matched_tags = sorted([t for t in all_resolved_tags if regex.search(t)])
+      matched_tags = sorted(
+        t for t in all_resolved_tags if metric_parser.matches_metric_spec(metric, t)
+      )
 
       if not matched_tags:
-        failed_id = metric.pattern if id_type == "pattern" else metric.name
+        failed_id = metric_parser.get_metric_identifier(metric)
         logger.warning("Metric '%s' not found in logs. Skipping.", failed_id)
         continue
 
