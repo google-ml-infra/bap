@@ -40,6 +40,7 @@ BAP is currently trusted by core ML frameworks to automate their OSS performance
 
 ## Getting Started
 
+-   [Quick Start Guide](docs/quick-start.md): Minimal setup examples for creating your first workflow and registry.
 -   [Onboarding Guide](docs/onboarding.md): Step-by-step guide for
     setting up a benchmark registry and configuring workflows using BAP.
 
