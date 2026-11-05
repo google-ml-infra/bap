@@ -12,10 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Utility library for parsing metric specifications from JSON."""
+"""Utility library for parsing and matching metric specifications."""
 
 import collections.abc
 import json
+import re
 from google.protobuf import json_format
 from bap_proto.common import metric_pb2
 
@@ -46,3 +47,22 @@ def parse_metric_specs_from_json(
     metric_specs.append(metric_spec)
 
   return metric_specs
+
+
+def matches_metric_spec(
+  metric_spec: metric_pb2.MetricSpec,
+  metric_name: str,
+) -> bool:
+  """Checks whether a MetricSpec matches a concrete metric name."""
+  id_type = metric_spec.WhichOneof("identifier")
+  if id_type == "name":
+    return metric_spec.name == metric_name
+  if id_type == "pattern":
+    return bool(re.search(metric_spec.pattern, metric_name))
+  return False
+
+
+def get_metric_identifier(metric_spec: metric_pb2.MetricSpec) -> str:
+  """Returns the configured identifier string (name or pattern) for a MetricSpec."""
+  id_type = metric_spec.WhichOneof("identifier")
+  return metric_spec.pattern if id_type == "pattern" else metric_spec.name

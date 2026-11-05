@@ -14,15 +14,16 @@
 
 """Library for analyzing A/B benchmark results."""
 
+from collections.abc import Mapping
 import json
 from pathlib import Path
 from typing import TypeAlias
-from collections.abc import Mapping
 from google.protobuf import json_format
 from bap_proto import benchmark_job_pb2
 from bap_proto import benchmark_result_pb2
 from bap_proto.common import metric_pb2
 from utils import markdown_formatter
+from utils import metric_parser
 
 # Maps A/B group to benchmark result.
 AbGroupResultMap: TypeAlias = Mapping[
@@ -122,7 +123,10 @@ def _get_comparison_config(
   if not job:
     return default_threshold, default_direction
 
-  metric_spec = next((m for m in job.metrics if m.name == metric_name), None)
+  metric_spec = next(
+    (m for m in job.metrics if metric_parser.matches_metric_spec(m, metric_name)),
+    None,
+  )
   if not metric_spec:
     return default_threshold, default_direction
 
