@@ -71,4 +71,4 @@ jobs:
 
       - name: Build and push OCI image via Bazel
         run: |
-          bazel run //integrations/datastudio:bap_datastudio_ingester_push
+          bazel run --remote_cache="" //integrations/datastudio:bap_datastudio_ingester_push
