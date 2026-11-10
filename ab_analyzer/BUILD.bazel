@@ -14,7 +14,12 @@
 
 load("@rules_python//python:defs.bzl", "py_binary", "py_library", "py_test")
 
-package(default_visibility = ["//visibility:public"])
+package(
+    default_applicable_licenses = ["//:license"],
+    default_visibility = ["//visibility:public"],
+)
+
+licenses(["notice"])
 
 py_library(
     name = "ab_analyzer_lib",
@@ -24,6 +29,7 @@ py_library(
         "//bap_proto:benchmark_result_py_proto",
         "//bap_proto/common:metric_py_proto",
         "//utils:markdown_formatter",
+        "//utils:metric_parser",
     ],
 )
 
