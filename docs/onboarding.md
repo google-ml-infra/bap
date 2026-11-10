@@ -7,8 +7,8 @@
 
 ### Schema Definitions
 
--   [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_registry.proto)
--   [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)
+-   [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/bap_proto/benchmark_registry.proto)
+-   [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/bap_proto/benchmark_result.proto)
 
 ## Overview
 
@@ -95,7 +95,7 @@ The reusable workflow exposes the following outputs which can be used by downstr
 
 ### Workflow Type Inference
 
-The [workflow type](https://github.com/google-ml-infra/bap/blob/main/./proto/common/workflow_type.proto) for a benchmark run is automatically inferred based on the GitHub event that triggered the workflow. This value is attached to the generated benchmark results as metadata, allowing downstream consumers (e.g., dashboards, Pub/Sub pipelines) to correctly categorize the data.
+The [workflow type](https://github.com/google-ml-infra/bap/blob/main/bap_proto/common/workflow_type.proto) for a benchmark run is automatically inferred based on the GitHub event that triggered the workflow. This value is attached to the generated benchmark results as metadata, allowing downstream consumers (e.g., dashboards, Pub/Sub pipelines) to correctly categorize the data.
 
 | GitHub Event | BAP Workflow Type |
 | :--- | :--- |
@@ -106,7 +106,7 @@ The [workflow type](https://github.com/google-ml-infra/bap/blob/main/./proto/com
 
 ## Create benchmark registry
 
-Next, create a benchmark registry file (.pbtxt) based on the [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_registry.proto) schema. This file defines what code to run and how to run it.
+Next, create a benchmark registry file (.pbtxt) based on the [benchmark_registry.proto](https://github.com/google-ml-infra/bap/blob/main/bap_proto/benchmark_registry.proto) schema. This file defines what code to run and how to run it.
 
 ### Defining workloads
 
@@ -634,7 +634,7 @@ To enable publishing, you must set `publish_metrics: true` in your workflow file
 
 The message payload is a JSON-serialized BenchmarkResult protocol buffer (UTF-8 encoded).
 
-Schema Definition: [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)
+Schema Definition: [benchmark_result.proto](https://github.com/google-ml-infra/bap/blob/main/bap_proto/benchmark_result.proto)
 
 ### Requesting a Subscription
 
@@ -659,7 +659,7 @@ If you are using the public topic, the details will be:
 
 You can then configure your client to listen to this subscription using the standard [Google Cloud Pub/Sub libraries](https://docs.cloud.google.com/pubsub/docs/reference/libraries).
 
-**Security Note**: Consumers are strongly encouraged to validate incoming messages before processing them. The [BenchmarkResult]((https://github.com/google-ml-infra/bap/blob/main/./proto/benchmark_result.proto)) protocol buffer definition is compatible with [protovalidate](https://github.com/bufbuild/protovalidate), allowing for robust constraints checking.
+**Security Note**: Consumers are strongly encouraged to validate incoming messages before processing them. The [BenchmarkResult](https://github.com/google-ml-infra/bap/blob/main/bap_proto/benchmark_result.proto) protocol buffer definition is compatible with [protovalidate](https://github.com/bufbuild/protovalidate), allowing for robust constraints checking.
 
 ## Data Studio Dashboards
 
